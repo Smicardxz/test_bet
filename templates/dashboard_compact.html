@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmaker Inefficiency Detector - Compact</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Filters */
+        .filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filters select, .filters button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* Compact Match Row */
+        .match-row {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid #3498db;
+        }
+        
+        .match-row:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .match-row.high-value {
+            border-left-color: #27ae60;
+        }
+        
+        .match-row.medium-value {
+            border-left-color: #f39c12;
+        }
+        
+        .match-header-compact {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .match-teams-compact {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .match-meta {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        
+        .signals-compact {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        
+        .signal-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .signal-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        
+        .signal-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .signal-value.excellent {
+            color: #27ae60;
+        }
+        
+        .signal-value.good {
+            color: #f39c12;
+        }
+        
+        .match-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .btn-compact {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-quick {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-quick:hover {
+            background: #2980b9;
+        }
+        
+        .btn-full {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-full:hover {
+            background: #7f8c8d;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-content.large {
+            max-width: 1000px;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        /* Quick View Sections */
+        .quick-section {
+            margin-bottom: 20px;
+        }
+        
+        .quick-section h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .quick-signals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .quick-signal-card {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .quick-signal-type {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .quick-signal-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        /* Compact Table */
+        .table-compact {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        
+        .table-compact th {
+            background: #ecf0f1;
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .table-compact td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        /* Mini Timeline */
+        .mini-timeline {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+        
+        .mini-match {
+            min-width: 50px;
+            height: 50px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mini-match:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-upcoming {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-live {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-finished {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+        
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+            font-weight: 600;
+        }
+        
+        .full-tab-content {
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Bookmaker Inefficiency Detector</h1>
+        <p>Compact Scanner Mode - Statistical Signals vs Market Value</p>
+    </div>
+    
+    <div class="container">
+        <!-- Filters -->
+        <div class="filters">
+            <select id="filter-country">
+                <option value="">All Countries</option>
+            </select>
+            <select id="filter-value">
+                <option value="">All Value Levels</option>
+            </select>
+            <button onclick="resetFilters()" class="btn-compact">Reset</button>
+            <button onclick="loadData()" class="btn-compact btn-quick">🔄 Refresh</button>
+        </div>
+        
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">Total Matches</div>
+                <div class="stat-value" id="total-matches">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Target</div>
+                <div class="stat-value" id="target-matches">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Analyzed</div>
+                <div class="stat-value" id="analyzed-matches">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Awaiting</div>
+                <div class="stat-value" id="awaiting-matches">0</div>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            Loading matches...
+        </div>
+        
+        <!-- Match Scanner -->
+        <div id="match-scanner" style="display: none;">
+            <!-- Matches will be inserted here -->
+        </div>
+    </div>
+    
+    <!-- Quick View Modal -->
+    <div id="quick-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="quick-modal-title">Quick View</h2>
+                <button class="modal-close" onclick="closeQuickModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="quick-modal-body">
+                <!-- Quick view content -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Full Analysis Modal -->
+    <div id="full-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="full-modal-title">Full Analysis</h2>
+                <button class="modal-close" onclick="closeFullModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="full-modal-body">
+                <!-- Full analysis content -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let allData = null;
+        
+        function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('match-scanner').style.display = 'none';
+            
+            fetch('/api/data')
+                .then(res => res.json())
+                .then(data => {
+                    allData = data;
+                    displayData(data);
+                })
+                .catch(err => {
+                    console.error('Error loading data:', err);
+                    document.getElementById('loading').innerHTML = 'Error loading data. Please refresh.';
+                });
+        }
+        
+        function displayData(data) {
+            console.log('Received data:', data);
+            
+            // Check for errors
+            if (!data.success) {
+                console.error('Data loading failed:', data.error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3 style="color: #e74c3c;">⚠️ Error Loading Data</h3>
+                        <p>${data.error || 'Unknown error'}</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log('Categories:', data.categories);
+            console.log('Upcoming statistical:', data.categories.upcoming_statistical.length);
+            console.log('Upcoming pending:', data.categories.upcoming_pending.length);
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('match-scanner').style.display = 'block';
+            
+            // Update stats
+            document.getElementById('total-matches').textContent = data.stats.total_matches;
+            document.getElementById('target-matches').textContent = data.stats.target_count;
+            document.getElementById('analyzed-matches').textContent = data.diagnostic.analyzed;
+            document.getElementById('awaiting-matches').textContent = data.diagnostic.awaiting_user_action;
+            
+            // Populate filters
+            const countryFilter = document.getElementById('filter-country');
+            countryFilter.innerHTML = '<option value="">All Countries</option>';
+            data.filters.countries.forEach(country => {
+                countryFilter.innerHTML += `<option value="${country}">${country}</option>`;
+            });
+            
+            // Display matches
+            const scanner = document.getElementById('match-scanner');
+            scanner.innerHTML = '';
+            
+            // Combine ALL target matches (upcoming, live, finished)
+            const allMatches = [
+                ...data.categories.upcoming_statistical,
+                ...data.categories.upcoming_inefficiencies,
+                ...data.categories.upcoming_no_value,
+                ...data.categories.upcoming_pending,
+                ...data.categories.live,
+                ...data.categories.finished
+            ];
+            
+            console.log('All matches combined:', allMatches.length);
+            console.log('  - Upcoming statistical:', data.categories.upcoming_statistical.length);
+            console.log('  - Upcoming inefficiencies:', data.categories.upcoming_inefficiencies.length);
+            console.log('  - Upcoming no value:', data.categories.upcoming_no_value.length);
+            console.log('  - Upcoming pending:', data.categories.upcoming_pending.length);
+            console.log('  - Live:', data.categories.live.length);
+            console.log('  - Finished:', data.categories.finished.length);
+            
+            if (allMatches.length === 0) {
+                scanner.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">No matches found. Try refreshing or check filters.</div>';
+            } else {
+                allMatches.forEach(match => {
+                    scanner.appendChild(createCompactMatchRow(match));
+                });
+            }
+            
+            console.log(`Displayed ${allMatches.length} matches`);
+        }
+        
+        function createCompactMatchRow(match) {
+            const row = document.createElement('div');
+            row.className = 'match-row';
+            
+            // Determine value class
+            if (match.top_value_level === 'HIGH_VALUE' || match.top_value_level === 'EXTREME_VALUE') {
+                row.classList.add('high-value');
+            } else if (match.top_value_level === 'MEDIUM_VALUE') {
+                row.classList.add('medium-value');
+            }
+            
+            // Check if match has signals (analyzed) or is pending
+            const isPending = !match.signals || match.signals.length === 0;
+            
+            let signalsHTML = '';
+            
+            if (isPending) {
+                // Pending match - show analyze button
+                signalsHTML = `
+                    <div class="signal-compact">
+                        <div class="signal-label">Status</div>
+                        <div class="signal-value" style="color: #f39c12;">Pending Analysis</div>
+                    </div>
+                    <div class="signal-compact">
+                        <div class="signal-label">Reason</div>
+                        <div class="signal-value" style="font-size: 0.85rem;">${match.not_analyzed_reason?.replace(/_/g, ' ') || 'Awaiting action'}</div>
+                    </div>
+                `;
+            } else {
+                // Analyzed match - show signals
+                const topSignals = match.signals.slice(0, 2);
+                
+                topSignals.forEach(signal => {
+                const hitRate = (signal.confidence * 100).toFixed(0);
+                const fairOdd = signal.fair_odds?.fair_odd?.toFixed(2) || 'N/A';
+                const line = signal.compatible_lines?.[0] || signal.type;
+                
+                const hitRateClass = hitRate >= 80 ? 'excellent' : hitRate >= 60 ? 'good' : '';
+                
+                signalsHTML += `
+                    <div class="signal-compact">
+                        <div class="signal-label">${line}</div>
+                        <div class="signal-value ${hitRateClass}">${hitRate}%</div>
+                    </div>
+                `;
+                });
+                
+                const fairOdd = topSignals[0]?.fair_odds?.fair_odd?.toFixed(2) || 'N/A';
+                const valueStatus = topSignals[0]?.fair_odds?.value_level || 'WAITING_FOR_ODDS';
+                
+                signalsHTML += `
+                    <div class="signal-compact">
+                        <div class="signal-label">Fair Odd</div>
+                        <div class="signal-value">${fairOdd}</div>
+                    </div>
+                    <div class="signal-compact">
+                        <div class="signal-label">Status</div>
+                        <div class="signal-value">${valueStatus.replace(/_/g, ' ')}</div>
+                    </div>
+                `;
+            }
+            
+            // Determine status badge
+            let statusBadge = '';
+            if (match.is_live) {
+                statusBadge = '<span class="badge" style="background: #e74c3c;">🔴 LIVE</span>';
+            } else if (match.is_finished) {
+                statusBadge = '<span class="badge" style="background: #95a5a6;">✓ FINISHED</span>';
+            } else {
+                statusBadge = '<span class="badge badge-upcoming">⏰ UPCOMING</span>';
+            }
+            
+            row.innerHTML = `
+                <div class="match-header-compact">
+                    <div class="match-teams-compact">
+                        <span class="badge badge-upcoming">${match.country.substring(0, 2).toUpperCase()}</span>
+                        ${statusBadge}
+                        ${match.home_team} vs ${match.away_team}
+                    </div>
+                </div>
+                <div class="match-meta">
+                    ${match.competition} • ${match.kickoff_time}
+                </div>
+                <div class="signals-compact">
+                    ${signalsHTML}
+                </div>
+                <div class="match-actions">
+                    ${isPending ? `
+                        <button class="btn-compact btn-quick" onclick='analyzeMatch(event, ${JSON.stringify(match).replace(/'/g, "&#39;")})'>
+                            📊 Analyze Match
+                        </button>
+                    ` : `
+                        <button class="btn-compact btn-quick" onclick="showQuickView(event, ${JSON.stringify(match).replace(/"/g, '&quot;')})">
+                            Quick View
+                        </button>
+                        <button class="btn-compact btn-full" onclick="showFullAnalysis(event, ${JSON.stringify(match).replace(/"/g, '&quot;')})">
+                            Full Analysis
+                        </button>
+                    `}
+                </div>
+            `;
+            
+            return row;
+        }
+        
+        function showQuickView(event, match) {
+            event.stopPropagation();
+            
+            const modal = document.getElementById('quick-modal');
+            const title = document.getElementById('quick-modal-title');
+            const body = document.getElementById('quick-modal-body');
+            
+            title.textContent = `${match.home_team} vs ${match.away_team}`;
+            
+            let content = `
+                <div class="quick-section">
+                    <h3>🎯 Top Signals</h3>
+                    <div class="quick-signals">
+            `;
+            
+            match.signals.slice(0, 3).forEach(signal => {
+                content += `
+                    <div class="quick-signal-card">
+                        <div class="quick-signal-type">${signal.type}</div>
+                        <div class="quick-signal-value">${(signal.confidence * 100).toFixed(0)}%</div>
+                        <div class="quick-signal-type">Fair: ${signal.fair_odds?.fair_odd?.toFixed(2) || 'N/A'}</div>
+                    </div>
+                `;
+            });
+            
+            content += `
+                    </div>
+                </div>
+                
+                <div class="quick-section">
+                    <h3>📊 Key Historical Data</h3>
+                    <table class="table-compact">
+                        <tr>
+                            <td>Max Goals</td>
+                            <td><strong>${match.signals[0]?.max_observed_goals || 'N/A'}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Avg Goals</td>
+                            <td><strong>${match.signals[0]?.avg_goals?.toFixed(1) || 'N/A'}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Variance</td>
+                            <td><strong>${match.signals[0]?.variance_score ? (match.signals[0].variance_score * 100).toFixed(0) + '%' : 'N/A'}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Stability</td>
+                            <td><strong>${match.signals[0]?.stability_score ? (match.signals[0].stability_score * 100).toFixed(0) + '%' : 'N/A'}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            if (match.match_history && match.match_history.length > 0) {
+                content += `
+                    <div class="quick-section">
+                        <h3>📅 Last 5 Matches</h3>
+                        <div class="mini-timeline">
+                `;
+                
+                match.match_history.slice(0, 5).forEach(m => {
+                    content += `
+                        <div class="mini-match" title="Total: ${m.total_goals}, HT: ${m.ht_goals || 'N/A'}">
+                            ${m.total_goals}
+                        </div>
+                    `;
+                });
+                
+                content += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            body.innerHTML = content;
+            modal.classList.add('active');
+        }
+        
+        function showFullAnalysis(event, match) {
+            event.stopPropagation();
+            
+            const modal = document.getElementById('full-modal');
+            const title = document.getElementById('full-modal-title');
+            const body = document.getElementById('full-modal-body');
+            
+            title.textContent = `${match.home_team} vs ${match.away_team} - Full Analysis`;
+            
+            // Create tabs structure
+            let content = `
+                <div style="border-bottom: 2px solid #ecf0f1; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="tab-btn active" onclick="switchFullTab(event, 'summary')">Summary</button>
+                        <button class="tab-btn" onclick="switchFullTab(event, 'ht')">HT Analysis</button>
+                        <button class="tab-btn" onclick="switchFullTab(event, 'ft')">FT Analysis</button>
+                        <button class="tab-btn" onclick="switchFullTab(event, 'history')">History</button>
+                        <button class="tab-btn" onclick="switchFullTab(event, 'h2h')">H2H</button>
+                        <button class="tab-btn" onclick="switchFullTab(event, 'debug')">Debug</button>
+                    </div>
+                </div>
+                
+                <div id="full-tab-summary" class="full-tab-content active">
+                    <h3>📊 Summary</h3>
+                    <div class="quick-section">
+                        <h4>Top Signals</h4>
+            `;
+            
+            // Add signals summary
+            match.signals.forEach(signal => {
+                content += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${signal.type}</strong>
+                                <div style="color: #7f8c8d; font-size: 0.9rem;">
+                                    ${signal.compatible_lines?.slice(0, 3).join(', ') || ''}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">
+                                    ${(signal.confidence * 100).toFixed(0)}%
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">
+                                    Fair: ${signal.fair_odds?.fair_odd?.toFixed(2) || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ecf0f1;">
+                            <strong>Why This Signal?</strong>
+                            <ul style="margin: 5px 0; padding-left: 20px; font-size: 0.9rem;">
+                                ${signal.reasons?.map(r => `<li>${r}</li>`).join('') || '<li>Strong historical pattern detected</li>'}
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ecf0f1;">
+                            <strong>Priority Score Breakdown:</strong>
+                            <div style="font-size: 0.9rem; margin-top: 5px;">
+                                • Confidence: ${(signal.confidence * 100).toFixed(0)}% × 0.3 = ${(signal.confidence * 30).toFixed(1)}<br>
+                                • Stability: ${signal.stability_score ? (signal.stability_score * 100).toFixed(0) + '%' : 'N/A'} × 0.1 = ${signal.stability_score ? (signal.stability_score * 10).toFixed(1) : '0'}<br>
+                                • Sample: ${signal.sample_size || 0} × 0.2 = ${((signal.sample_size || 0) * 0.2).toFixed(1)}<br>
+                                • Variance: ${signal.variance_score ? (100 - signal.variance_score * 100).toFixed(0) + '%' : 'N/A'} × 0.2 = ${signal.variance_score ? ((1 - signal.variance_score) * 20).toFixed(1) : '0'}<br>
+                                • Value: ${signal.value_assessment?.priority_score || 0} × 0.2 = ${((signal.value_assessment?.priority_score || 0) * 0.2).toFixed(1)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content += `
+                    </div>
+                </div>
+                
+                <div id="full-tab-ht" class="full-tab-content" style="display: none;">
+            `;
+            
+            // Add HT/FT tables if available
+            if (match.ht_analysis && match.ht_analysis.table) {
+                content = `
+                    <div class="quick-section">
+                        <h3>⚽ HT UNDER ANALYSIS</h3>
+                        <table class="table-compact">
+                            <thead>
+                                <tr>
+                                    <th>Line</th>
+                                    <th>Hit Rate</th>
+                                    <th>Fair Odd</th>
+                                    <th>Sample</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                match.ht_analysis.table.forEach(row => {
+                    content += `
+                        <tr>
+                            <td><strong>${row.line}</strong></td>
+                            <td style="color: ${row.hit_rate >= 80 ? '#27ae60' : row.hit_rate >= 60 ? '#f39c12' : '#95a5a6'};">
+                                ${row.hit_rate.toFixed(0)}%
+                            </td>
+                            <td><strong>${row.fair_odd ? row.fair_odd.toFixed(2) : 'N/A'}</strong></td>
+                            <td>${row.sample_size}</td>
+                        </tr>
+                    `;
+                });
+                
+                content += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            if (match.ft_analysis && match.ft_analysis.table) {
+                content += `
+                    <div class="quick-section">
+                        <h3>⚽ FT UNDER ANALYSIS</h3>
+                        <table class="table-compact">
+                            <thead>
+                                <tr>
+                                    <th>Line</th>
+                                    <th>Hit Rate</th>
+                                    <th>Fair Odd</th>
+                                    <th>Sample</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                match.ft_analysis.table.slice(0, 6).forEach(row => {
+                    content += `
+                        <tr>
+                            <td><strong>${row.line}</strong></td>
+                            <td style="color: ${row.hit_rate >= 80 ? '#27ae60' : row.hit_rate >= 60 ? '#f39c12' : '#95a5a6'};">
+                                ${row.hit_rate.toFixed(0)}%
+                            </td>
+                            <td><strong>${row.fair_odd ? row.fair_odd.toFixed(2) : 'N/A'}</strong></td>
+                            <td>${row.sample_size}</td>
+                        </tr>
+                    `;
+                });
+                
+                content += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="full-tab-history" class="full-tab-content" style="display: none;">
+                    <h3>📅 Match History</h3>
+            `;
+            
+            if (match.match_history && match.match_history.length > 0) {
+                content += `
+                    <div class="mini-timeline">
+                `;
+                match.match_history.forEach(m => {
+                    content += `
+                        <div class="mini-match" title="Total: ${m.total_goals}, HT: ${m.ht_goals || 'N/A'}">
+                            <div style="font-size: 0.7rem; color: #7f8c8d;">M${m.match_number}</div>
+                            <div style="font-size: 1.1rem; font-weight: bold;">${m.total_goals}</div>
+                            <div style="font-size: 0.7rem; color: #95a5a6;">HT: ${m.ht_goals !== null ? m.ht_goals : '?'}</div>
+                        </div>
+                    `;
+                });
+                content += `
+                    </div>
+                `;
+            } else {
+                content += '<p style="color: #7f8c8d;">No match history available</p>';
+            }
+            
+            content += `
+                </div>
+                
+                <div id="full-tab-h2h" class="full-tab-content" style="display: none;">
+                    <h3>🤝 Head to Head</h3>
+                    <p style="color: #7f8c8d; padding: 20px; text-align: center;">
+                        H2H data will be available when real historical data is implemented.<br>
+                        <small>Currently using mock data for demonstration.</small>
+                    </p>
+                </div>
+                
+                <div id="full-tab-debug" class="full-tab-content" style="display: none;">
+                    <h3>🔧 Debug Information</h3>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem;">
+                        <strong>Match ID:</strong> ${match.home_team}_vs_${match.away_team}<br>
+                        <strong>Country:</strong> ${match.country}<br>
+                        <strong>Competition:</strong> ${match.competition}<br>
+                        <strong>Target Level:</strong> ${match.target_level}<br>
+                        <strong>Target Score:</strong> ${match.target_score}/100<br>
+                        <strong>Coverage:</strong> ${match.coverage_score}% (${match.coverage_level})<br>
+                        <strong>Analysis Status:</strong> ${match.analysis_status}<br>
+                        <strong>Signals Count:</strong> ${match.signals?.length || 0}<br>
+                        <strong>Top Value Level:</strong> ${match.top_value_level}<br>
+                        <strong>Top Priority:</strong> ${match.top_priority?.toFixed(2) || 'N/A'}<br>
+                        <br>
+                        <strong>Data Source:</strong> Mock (Historical data not yet implemented)<br>
+                        <strong>Sample Size:</strong> ${match.signals?.[0]?.sample_size || 'N/A'}<br>
+                        <strong>Data Quality:</strong> ${match.signals?.[0]?.data_quality || 'N/A'}
+                    </div>
+                </div>
+            `;
+            }
+            
+            body.innerHTML = content;
+            modal.classList.add('active');
+        }
+        
+        function switchFullTab(event, tabName) {
+            event.stopPropagation();
+            
+            // Hide all tabs
+            document.querySelectorAll('.full-tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`full-tab-${tabName}`).style.display = 'block';
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        function closeQuickModal() {
+            document.getElementById('quick-modal').classList.remove('active');
+        }
+        
+        function closeFullModal() {
+            document.getElementById('full-modal').classList.remove('active');
+        }
+        
+        function analyzeMatch(event, match) {
+            event.stopPropagation();
+            
+            console.log('[ANALYZE] Button clicked for match:', match);
+            
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Analyzing...';
+            
+            // Prepare request data
+            const requestData = {
+                fixture_id: match.match_id || '',
+                home_team_id: match.home_team_id || '',
+                away_team_id: match.away_team_id || '',
+                home_team_name: match.home_team || '',
+                away_team_name: match.away_team || '',
+                league_name: match.competition || '',
+                country: match.country || ''
+            };
+            
+            console.log('[ANALYZE] Request data:', requestData);
+            console.log('[ANALYZE] Calling /api/analyze_match...');
+            
+            fetch('/api/analyze_match', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(res => {
+                console.log('[ANALYZE] HTTP status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('[ANALYZE] Response:', data);
+                
+                if (data.success) {
+                    if (data.analysis_status === 'ANALYZABLE_NO_ODDS' || data.analysis_status === 'ANALYZED') {
+                        console.log('[ANALYZE] Analysis complete!');
+                        console.log('  - Status:', data.analysis_status);
+                        console.log('  - Data origin:', data.data_origin);
+                        console.log('  - Mock usage:', data.mock_usage);
+                        console.log('  - Home history:', data.home_history_count);
+                        console.log('  - Away history:', data.away_history_count);
+                        console.log('  - H2H:', data.h2h_count);
+                        console.log('  - HT rows:', data.ht_analysis?.table?.length || 0);
+                        console.log('  - FT rows:', data.ft_analysis?.table?.length || 0);
+                        console.log('  - Signals:', data.signals?.length || 0);
+                        
+                        // Build detailed result message
+                        let message = `Analysis Complete!\n\n`;
+                        message += `Status: ${data.analysis_status}\n`;
+                        message += `Data Origin: ${data.data_origin}\n`;
+                        message += `Mock Usage: ${data.mock_usage}\n\n`;
+                        message += `History:\n`;
+                        message += `  Home: ${data.home_history_count} matches\n`;
+                        message += `  Away: ${data.away_history_count} matches\n`;
+                        message += `  H2H: ${data.h2h_count} matches${data.h2h_missing ? ' (missing)' : ''}\n\n`;
+                        
+                        if (data.ht_analysis?.table?.length > 0) {
+                            message += `HT Analysis: ${data.ht_analysis.table.length} lines\n`;
+                            message += `  Sample: ${data.ht_analysis.sample_size} matches\n`;
+                            message += `  Avg HT goals: ${data.ht_analysis.avg_ht_goals?.toFixed(2) || 'N/A'}\n\n`;
+                        }
+                        
+                        if (data.ft_analysis?.table?.length > 0) {
+                            message += `FT Analysis: ${data.ft_analysis.table.length} lines\n`;
+                            message += `  Sample: ${data.ft_analysis.sample_size} matches\n`;
+                            message += `  Avg goals: ${data.ft_analysis.avg_goals?.toFixed(2) || 'N/A'}\n\n`;
+                        }
+                        
+                        if (data.signals?.length > 0) {
+                            message += `Signals: ${data.signals.length} detected\n`;
+                            data.signals.forEach((sig, i) => {
+                                message += `  ${i+1}. ${sig.type} (${(sig.confidence * 100).toFixed(1)}%)\n`;
+                            });
+                        }
+                        
+                        if (data.analysis_status === 'ANALYZABLE_NO_ODDS') {
+                            message += `\n⚠️ Waiting for odds to calculate value`;
+                        }
+                        
+                        alert(message);
+                        loadData();
+                    } else if (data.analysis_status === 'DATA_INSUFFICIENT') {
+                        console.log('[ANALYZE] Data insufficient:', data.reason);
+                        alert(`Data Insufficient\n\nReason: ${data.reason}\nHome History: ${data.home_history_count}\nAway History: ${data.away_history_count}`);
+                        button.disabled = false;
+                        button.textContent = '📊 Analyze Match';
+                    }
+                } else {
+                    console.error('[ANALYZE] Error:', data.error);
+                    alert(`Analysis failed: ${data.error}`);
+                    button.disabled = false;
+                    button.textContent = '📊 Analyze Match';
+                }
+            })
+            .catch(err => {
+                console.error('[ANALYZE] Network error:', err);
+                alert('Error analyzing match. Check console for details.');
+                button.disabled = false;
+                button.textContent = '📊 Analyze Match';
+            });
+        }
+        
+        function resetFilters() {
+            document.getElementById('filter-country').value = '';
+            document.getElementById('filter-value').value = '';
+        }
+        
+        // Load data on page load
+        loadData();
+        
+        // Auto-refresh every 5 minutes
+        setInterval(loadData, 300000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Intelligence Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --emerald: #10b981;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.875rem;
+        }
+        
+        .header-stat span {
+            opacity: 0.9;
+        }
+        
+        .header-stat strong {
+            font-weight: 600;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Filters */
+        .filters {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+        
+        select, button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        select:hover, button:hover {
+            border-color: var(--gray-600);
+        }
+        
+        button.primary {
+            background: var(--purple);
+            color: white;
+            border-color: var(--purple);
+        }
+        
+        button.primary:hover {
+            background: #7c3aed;
+        }
+        
+        /* Match Card - LEVEL 1 */
+        .match-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            border-left: 4px solid var(--purple);
+        }
+        
+        .match-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-2px);
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .match-info {
+            flex: 1;
+        }
+        
+        .match-league {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+        }
+        
+        .country-flag {
+            font-size: 1.25rem;
+        }
+        
+        .match-teams {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+        
+        .match-time {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        .match-status {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .badge.upcoming {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge.live {
+            background: #fee2e2;
+            color: #991b1b;
+            animation: pulse 2s infinite;
+        }
+        
+        .badge.waiting-odds {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Best Bet Section */
+        .best-bet {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid var(--emerald);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .best-bet-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .best-bet-icon {
+            font-size: 1.5rem;
+        }
+        
+        .best-bet-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--emerald);
+        }
+        
+        .best-bet-market {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+        }
+        
+        .best-bet-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-item-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .confidence-95 { color: var(--emerald); }
+        .confidence-85 { color: var(--green); }
+        .confidence-75 { color: var(--yellow); }
+        .confidence-low { color: var(--red); }
+        
+        /* Why Detected */
+        .why-detected {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .why-detected-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+        
+        .why-detected-list {
+            list-style: none;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        .why-detected-list li {
+            padding-left: 1.25rem;
+            position: relative;
+            margin-bottom: 0.25rem;
+        }
+        
+        .why-detected-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0.5rem;
+            color: var(--emerald);
+            font-weight: 700;
+        }
+        
+        /* Action Buttons */
+        .match-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-600);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-600);
+            background: none;
+            border: none;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .modal-close:hover {
+            background: var(--gray-100);
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        /* Quick View Content */
+        .top-signals {
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .signal-item {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .signal-info {
+            flex: 1;
+        }
+        
+        .signal-market {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+        
+        .signal-confidence {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .key-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .key-stat {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .key-stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+        }
+        
+        .key-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .last-matches {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .match-result {
+            background: var(--gray-100);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+        
+        /* Accordion */
+        .accordion {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .accordion-header {
+            background: var(--gray-50);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .accordion-header:hover {
+            background: var(--gray-100);
+        }
+        
+        .accordion-icon {
+            transition: transform 0.2s;
+        }
+        
+        .accordion.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+        
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .accordion.active .accordion-content {
+            max-height: 2000px;
+        }
+        
+        .accordion-body {
+            padding: 1.5rem;
+        }
+        
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        th {
+            background: var(--gray-50);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-700);
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-600);
+        }
+        
+        .spinner {
+            border: 3px solid var(--gray-200);
+            border-top: 3px solid var(--purple);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-600);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .best-bet-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .key-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .match-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <h1>🎯 Betting Intelligence Dashboard</h1>
+            </div>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <span>Opportunities:</span> <strong id="header-opportunities">0</strong>
+                </div>
+                <div class="header-stat">
+                    <span>Analyzed:</span> <strong id="header-analyzed">0</strong>
+                </div>
+                <div class="header-stat">
+                    <span>Live:</span> <strong id="header-live">0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <span class="filter-label">League:</span>
+                <select id="filter-league">
+                    <option value="">All Leagues</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Country:</span>
+                <select id="filter-country">
+                    <option value="">All Countries</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Confidence:</span>
+                <select id="filter-confidence">
+                    <option value="">All</option>
+                    <option value="95">95%+</option>
+                    <option value="85">85%+</option>
+                    <option value="75">75%+</option>
+                </select>
+            </div>
+            <button class="primary" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+
+        <!-- Matches Container -->
+        <div id="matches-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading betting opportunities...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick View Modal -->
+    <div id="quick-view-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Quick View</h2>
+                <button class="modal-close" onclick="closeModal('quick-view-modal')">×</button>
+            </div>
+            <div class="modal-body" id="quick-view-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Deep Analysis Modal -->
+    <div id="deep-analysis-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="deep-modal-title">Deep Analysis</h2>
+                <button class="modal-close" onclick="closeModal('deep-analysis-modal')">×</button>
+            </div>
+            <div class="modal-body" id="deep-analysis-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let allMatches = [];
+        let analyzedMatches = new Map();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+
+        // Load data from API
+        async function loadData() {
+            try {
+                // Show loading message
+                const container = document.getElementById('matches-container');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="spinner"></div>
+                        <h3>Analyzing matches...</h3>
+                        <p>Loading historical data and calculating probabilities</p>
+                        <p style="font-size: 0.875rem; color: var(--gray-600); margin-top: 1rem;">This may take 30-60 seconds on first load</p>
+                    </div>
+                `;
+                
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                console.log('[DATA] Loaded successfully, matches:', 
+                    (data.categories?.upcoming_inefficiencies?.length || 0) + 
+                    (data.categories?.upcoming_statistical?.length || 0));
+                
+                if (!data.success) {
+                    showError('API returned error: ' + (data.error || 'Unknown error'));
+                    return;
+                }
+                
+                // Update header stats
+                const totalOpportunities = (data.categories?.upcoming_inefficiencies?.length || 0) + 
+                                          (data.categories?.upcoming_statistical?.length || 0);
+                document.getElementById('header-opportunities').textContent = totalOpportunities;
+                document.getElementById('header-analyzed').textContent = data.diagnostic?.analyzed || 0;
+                document.getElementById('header-live').textContent = data.categories?.live?.length || 0;
+                
+                // Combine all matches from categories
+                allMatches = [
+                    ...(data.categories?.upcoming_inefficiencies || []),
+                    ...(data.categories?.upcoming_statistical || []),
+                    ...(data.categories?.upcoming_no_value || []),
+                    ...(data.categories?.upcoming_pending || []),
+                    ...(data.categories?.live || [])
+                ];
+                
+                // Populate filters
+                populateFilters();
+                
+                // Display matches
+                displayMatches();
+                
+            } catch (error) {
+                console.error('[ERROR] Loading data:', error);
+                showError('Failed to load data. Please refresh.');
+            }
+        }
+
+        // Populate filter dropdowns
+        function populateFilters() {
+            const leagues = new Set();
+            const countries = new Set();
+            
+            allMatches.forEach(match => {
+                if (match.competition) leagues.add(match.competition);
+                if (match.country) countries.add(match.country);
+            });
+            
+            const leagueSelect = document.getElementById('filter-league');
+            const countrySelect = document.getElementById('filter-country');
+            
+            leagues.forEach(league => {
+                const option = document.createElement('option');
+                option.value = league;
+                option.textContent = league;
+                leagueSelect.appendChild(option);
+            });
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+        }
+
+        // Display matches
+        function displayMatches() {
+            const container = document.getElementById('matches-container');
+            
+            // Apply filters
+            const leagueFilter = document.getElementById('filter-league').value;
+            const countryFilter = document.getElementById('filter-country').value;
+            const confidenceFilter = document.getElementById('filter-confidence').value;
+            
+            let filtered = allMatches.filter(match => {
+                if (leagueFilter && match.competition !== leagueFilter) return false;
+                if (countryFilter && match.country !== countryFilter) return false;
+                // Confidence filter will be applied after analysis
+                return true;
+            });
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>No opportunities found</h3>
+                        <p>Try adjusting your filters or refresh the data</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                container.innerHTML = filtered.map(match => createMatchCard(match)).join('');
+                console.log('[DISPLAY] Displayed', filtered.length, 'matches');
+            } catch (error) {
+                console.error('[ERROR] Creating match cards:', error);
+                showError('Error displaying matches: ' + error.message);
+            }
+        }
+
+        // Create match card (LEVEL 1)
+        function createMatchCard(match) {
+            const matchId = match.match_id || `${match.home_team}_${match.away_team}`;
+            
+            // Use match data directly (already contains analysis from API)
+            const matchProfile = match.match_profile || null;
+            const bestEdges = match.best_edges || [];
+            const edgeDetection = match.edge_detection || {};
+            
+            // Get country flag emoji (simplified)
+            const countryFlag = getCountryFlag(match.country);
+            
+            // Status badge
+            let statusBadge = '';
+            if (match.is_live || match.status === 'LIVE' || match.elapsed_minutes) {
+                statusBadge = '<span class="badge live">🔴 LIVE</span>';
+            } else {
+                statusBadge = '<span class="badge upcoming">⏰ UPCOMING</span>';
+            }
+            const signals = match.signals || [];
+            const hasProfile = matchProfile !== null;
+            const hasEdge = bestEdges.length > 0;
+            const hasAnalysis = hasProfile || hasEdge || signals.length > 0;
+            
+            // Declare variables for template
+            let bestMarket = '';
+            let confidence = 0;
+            let confidenceClass = '';
+            let fairOdd = 'N/A';
+            let marketOdd = null;
+            let edgePercent = null;
+            let sample = 0;
+            let reasons = [];
+            
+            // If analyzed, show best edge
+            if (hasEdge) {
+                // Use BEST EDGE (from edge detector)
+                const bestEdge = bestEdges[0];
+                confidence = bestEdge.confidence === 'HIGH' ? 90 : bestEdge.confidence === 'MEDIUM' ? 75 : 60;
+                confidenceClass = getConfidenceClass(confidence);
+                fairOdd = bestEdge.fair_odd?.toFixed(2) || 'N/A';
+                marketOdd = bestEdge.market_odd?.toFixed(2) || null;
+                edgePercent = bestEdge.edge_percent ? (bestEdge.edge_percent * 100).toFixed(1) : null;
+                sample = bestEdge.sample_size || 0;
+                
+                // Market name
+                bestMarket = bestEdge.market || 'Unknown';
+                
+                // Reasons from edge detector
+                reasons = bestEdge.reasons || [];
+                if (edgePercent && marketOdd) {
+                    reasons.unshift(`Edge: +${edgePercent}% vs bookmaker`);
+                }
+            } else if (hasAnalysis) {
+                // Fallback to old signal system if no edges
+                const bestSignal = signals[0];
+                confidence = Math.round((bestSignal.confidence || 0) * 100);
+                confidenceClass = getConfidenceClass(confidence);
+                fairOdd = bestSignal.fair_odds?.fair_odd?.toFixed(2) || 'N/A';
+                marketOdd = null;
+                edgePercent = null;
+                sample = bestSignal.sample_size || 0;
+                
+                // Extract best market
+                bestMarket = bestSignal.suggested_markets?.[0] || bestSignal.type || 'Unknown';
+                
+                // Why detected reasons
+                reasons = bestSignal.reasons?.slice(0, 4) || [];
+                if (reasons.length === 0 && bestSignal.type) {
+                    reasons = [
+                        `Signal type: ${bestSignal.type}`,
+                        `Confidence: ${confidence}%`,
+                        `Strength: ${bestSignal.strength || 'N/A'}`
+                    ];
+                }
+            }
+            
+            if (hasAnalysis) {
+                
+                return `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <div class="match-info">
+                                <div class="match-league">
+                                    <span class="country-flag">${countryFlag}</span>
+                                    <span>${match.country} · ${match.competition}</span>
+                                </div>
+                                <div class="match-teams">${match.home_team} vs ${match.away_team}</div>
+                                <div class="match-time">${match.kickoff_time || 'TBD'}</div>
+                            </div>
+                            <div class="match-status">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        
+                        <div class="best-bet">
+                            ${(() => {
+                                // DISCOVERY LAYER: Show profile first if available
+                                if (matchProfile && matchProfile.tempo_profile) {
+                                    const profileBadges = [];
+                                    
+                                    // Tempo + Scoring profile (safe checks)
+                                    if (matchProfile.tempo_profile) {
+                                        const tempoEmoji = matchProfile.tempo_profile === 'HIGH_TEMPO' ? '⚡' : matchProfile.tempo_profile === 'LOW_TEMPO' ? '🐌' : '⚖️';
+                                        profileBadges.push(`${tempoEmoji} ${matchProfile.tempo_profile.replace(/_/g, ' ')}`);
+                                    }
+                                    if (matchProfile.scoring_profile) {
+                                        profileBadges.push(matchProfile.scoring_profile.replace(/_/g, ' '));
+                                    }
+                                    
+                                    // Specific profiles (safe check)
+                                    if (Array.isArray(matchProfile.specific_profiles)) {
+                                        matchProfile.specific_profiles.forEach(p => {
+                                            if (p === 'BTTS_PROFILE') profileBadges.push('⚽ BTTS');
+                                            else if (p === 'HT_GOAL_PROFILE') profileBadges.push('⚡ HT GOALS');
+                                            else if (p === 'SLOW_START_PROFILE') profileBadges.push('🐢 SLOW START');
+                                        });
+                                    }
+                                    
+                                    return `
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <div style="font-size: 0.75rem; color: var(--gray-600); margin-bottom: 0.25rem;">PROFILE</div>
+                                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                                ${profileBadges.map(badge => `<span class="badge" style="background: var(--purple); color: white; font-size: 0.75rem;">${badge}</span>`).join('')}
+                                            </div>
+                                            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--gray-600);">
+                                                Interest: ${(matchProfile.interest_score || 0).toFixed(0)}/100 | 
+                                                Confidence: ${(matchProfile.confidence_score || 0).toFixed(0)}/100 | 
+                                                Sample: ${matchProfile.sample_size || 0}
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                return '';
+                            })()}
+                            
+                            <div class="best-bet-header">
+                                <span class="best-bet-icon">${hasEdge ? '🔥' : '📊'}</span>
+                                <span class="best-bet-label">${edgePercent ? 'BEST EDGE' : hasProfile ? 'STATISTICAL ANGLES' : 'BEST BET'}</span>
+                            </div>
+                            <div class="best-bet-market">${bestMarket}</div>
+                            ${marketOdd ? `<div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">Market Odd: ${marketOdd}</div>` : ''}
+                            ${(() => {
+                                const overProfiles = edgeDetection?.over_profiles || [];
+                                if (overProfiles.length === 0) return '';
+                                
+                                const badges = overProfiles.map(profile => {
+                                    if (profile === 'EXTREME_OVER') {
+                                        return '<span class="badge" style="background: var(--red); color: white; margin-right: 0.25rem;">🔥 EXTREME OVER</span>';
+                                    } else if (profile === 'HIGH_SCORING_PROFILE') {
+                                        return '<span class="badge" style="background: var(--orange); color: white; margin-right: 0.25rem;">⚡ HIGH SCORING</span>';
+                                    } else if (profile === 'HT_GOAL_PROFILE') {
+                                        return '<span class="badge" style="background: var(--yellow); color: black; margin-right: 0.25rem;">⚡ HT GOALS</span>';
+                                    }
+                                    return '';
+                                }).join('');
+                                
+                                return `<div style="margin-bottom: 0.5rem;">${badges}</div>`;
+                            })()}
+                            <div class="best-bet-stats">
+                                ${edgePercent ? `
+                                <div class="stat-item">
+                                    <div class="stat-item-label">Edge</div>
+                                    <div class="stat-item-value" style="color: var(--emerald);">+${edgePercent}%</div>
+                                </div>
+                                ` : `
+                                <div class="stat-item">
+                                    <div class="stat-item-label">Confidence</div>
+                                    <div class="stat-item-value ${confidenceClass}">${confidence}%</div>
+                                </div>
+                                `}
+                                <div class="stat-item">
+                                    <div class="stat-item-label">Fair Odd</div>
+                                    <div class="stat-item-value">${fairOdd}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-item-label">Sample</div>
+                                    <div class="stat-item-value">${sample}</div>
+                                </div>
+                            </div>
+                            <div class="why-detected">
+                                <div class="why-detected-title">${hasEdge ? 'WHY DETECTED:' : 'STATISTICAL ANGLES:'}</div>
+                                <ul class="why-detected-list">
+                                    ${hasEdge ? reasons.map(r => `<li>${r}</li>`).join('') : 
+                                      matchProfile && Array.isArray(matchProfile.statistical_angles) && matchProfile.statistical_angles.length > 0 ? 
+                                      matchProfile.statistical_angles.map(angle => `<li>${angle}</li>`).join('') :
+                                      reasons.length > 0 ? reasons.map(r => `<li>${r}</li>`).join('') : '<li>Analyzing match patterns...</li>'}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="match-actions">
+                            <button class="btn btn-primary" onclick="showQuickView('${matchId}')">
+                                📊 Quick View
+                            </button>
+                            <button class="btn btn-secondary" onclick="showDeepAnalysis('${matchId}')">
+                                🔬 Deep Analysis
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Not analyzed yet - show analyze button
+                return `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <div class="match-info">
+                                <div class="match-league">
+                                    <span class="country-flag">${countryFlag}</span>
+                                    <span>${match.country} · ${match.competition}</span>
+                                </div>
+                                <div class="match-teams">${match.home_team} vs ${match.away_team}</div>
+                                <div class="match-time">${match.kickoff_time || 'TBD'}</div>
+                            </div>
+                            <div class="match-status">
+                                ${statusBadge}
+                                <span class="badge waiting-odds">⚠️ WAITING FOR ODDS</span>
+                            </div>
+                        </div>
+                        
+                        <div class="match-actions">
+                            <button class="btn btn-primary" onclick="analyzeMatch('${matchId}', this)">
+                                📊 Analyze Match
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Get country flag emoji
+        function getCountryFlag(country) {
+            const flags = {
+                'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+                'Spain': '🇪🇸',
+                'Italy': '🇮🇹',
+                'Germany': '🇩🇪',
+                'France': '🇫🇷',
+                'USA': '🇺🇸',
+                'Ethiopia': '🇪🇹',
+                'Kazakhstan': '🇰🇿'
+            };
+            return flags[country] || '🌍';
+        }
+
+        // Get confidence class
+        function getConfidenceClass(confidence) {
+            if (confidence >= 95) return 'confidence-95';
+            if (confidence >= 85) return 'confidence-85';
+            if (confidence >= 75) return 'confidence-75';
+            return 'confidence-low';
+        }
+
+        // Analyze match
+        async function analyzeMatch(matchId, button) {
+            const match = allMatches.find(m => (m.match_id || `${m.home_team}_${m.away_team}`) === matchId);
+            if (!match) return;
+            
+            button.disabled = true;
+            button.textContent = '⏳ Analyzing...';
+            
+            try {
+                const response = await fetch('/api/analyze_match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fixture_id: match.match_id,
+                        home_team_id: match.home_team_id,
+                        away_team_id: match.away_team_id,
+                        home_team: match.home_team,
+                        away_team: match.away_team,
+                        competition: match.competition,
+                        country: match.country,
+                        kickoff_time: match.kickoff_time
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('[ANALYZE] Response:', data);
+                
+                if (data.success && data.analysis_status === 'ANALYZABLE_NO_ODDS') {
+                    // Store analysis
+                    analyzedMatches.set(matchId, data);
+                    
+                    // Refresh display
+                    displayMatches();
+                } else {
+                    alert(`Analysis failed: ${data.reason || 'Unknown error'}`);
+                    button.disabled = false;
+                    button.textContent = '📊 Analyze Match';
+                }
+            } catch (error) {
+                console.error('[ERROR] Analyzing match:', error);
+                alert('Analysis failed. Please try again.');
+                button.disabled = false;
+                button.textContent = '📊 Analyze Match';
+            }
+        }
+
+        // Helper: Find match by ID
+        function findMatchById(matchId) {
+            return allMatches.find(m => (m.match_id || `${m.home_team}_${m.away_team}`) === matchId);
+        }
+
+        // Show quick view modal - RICH ACTIONABLE CALCULATIONS
+        function showQuickView(matchId) {
+            const match = findMatchById(matchId);
+            if (!match) return;
+            
+            const profile = match.match_profile || {};
+            const edges = match.best_edges || [];
+            const htAnalysis = match.ht_analysis || {};
+            const ftAnalysis = match.ft_analysis || {};
+            
+            document.getElementById('modal-title').textContent = `${match.home_team} vs ${match.away_team}`;
+            
+            let content = '';
+            
+            // --- PROFILE SUMMARY ---
+            content += `<div class="top-signals"><h3 class="section-title">� Match Profile</h3>`;
+            
+            if (profile.tempo_profile) {
+                const tempoEmoji = profile.tempo_profile === 'HIGH_TEMPO' ? '⚡' : profile.tempo_profile === 'LOW_TEMPO' ? '🐌' : '⚖️';
+                content += `
+                    <div class="signal-item" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-left: 4px solid var(--purple);">
+                        <div class="signal-info">
+                            <div class="signal-market">${tempoEmoji} ${profile.tempo_profile.replace(/_/g, ' ')}</div>
+                            <div class="signal-confidence">${profile.scoring_profile ? profile.scoring_profile.replace(/_/g, ' ') : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Scores
+            content += `
+                <div class="key-stats" style="margin-top: 1rem;">
+                    <div class="key-stat" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+                        <div class="key-stat-label">Interest Score</div>
+                        <div class="key-stat-value" style="color: var(--orange);">${(profile.interest_score || 0).toFixed(0)}/100</div>
+                    </div>
+                    <div class="key-stat" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
+                        <div class="key-stat-label">Confidence</div>
+                        <div class="key-stat-value" style="color: var(--emerald);">${(profile.confidence_score || 0).toFixed(0)}/100</div>
+                    </div>
+                    <div class="key-stat" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);">
+                        <div class="key-stat-label">Volatility</div>
+                        <div class="key-stat-value" style="color: var(--red);">${(profile.volatility_score || 0).toFixed(0)}/100</div>
+                    </div>
+                    <div class="key-stat" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+                        <div class="key-stat-label">Sample Size</div>
+                        <div class="key-stat-value" style="color: var(--blue);">${profile.sample_size || 0}</div>
+                    </div>
+                </div>
+            `;
+            content += '</div>';
+            
+            // --- BEST EDGES (ACTIONABLE) ---
+            if (edges.length > 0) {
+                content += `<div class="top-signals" style="margin-top: 1.5rem;"><h3 class="section-title">🔥 Best Edges / Value Bets</h3>`;
+                edges.forEach((edge, i) => {
+                    const edgePct = edge.edge_percent ? (edge.edge_percent * 100).toFixed(1) : '0.0';
+                    const edgeColor = edge.edge_percent > 0.1 ? 'var(--emerald)' : edge.edge_percent > 0.05 ? 'var(--green)' : 'var(--gray-600)';
+                    const confidence = edge.confidence === 'HIGH' ? '✅ HIGH' : edge.confidence === 'MEDIUM' ? '⚠️ MEDIUM' : '❓ LOW';
+                    
+                    content += `
+                        <div class="signal-item" style="border-left: 4px solid ${edgeColor};">
+                            <div class="signal-info">
+                                <div class="signal-market">${i + 1}. ${edge.market || 'Unknown'}</div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.25rem;">
+                                    Edge: <strong style="color: ${edgeColor};">+${edgePct}%</strong> | 
+                                    Fair: ${edge.fair_odd?.toFixed(2) || 'N/A'} | 
+                                    Market: ${edge.market_odd?.toFixed(2) || 'N/A'} | 
+                                    ${confidence}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                    Sample: ${edge.sample_size || 0} matches
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                content += '</div>';
+            }
+            
+            // --- STATISTICAL ANGLES (ACTIONABLE) ---
+            if (profile.statistical_angles && profile.statistical_angles.length > 0) {
+                content += `<div class="top-signals" style="margin-top: 1.5rem;"><h3 class="section-title">📐 Statistical Angles</h3>`;
+                profile.statistical_angles.forEach(angle => {
+                    content += `
+                        <div class="signal-item" style="background: var(--gray-50);">
+                            <div class="signal-info">
+                                <div class="signal-market" style="font-size: 1rem;">${angle}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                content += '</div>';
+            }
+            
+            // --- KEY STATS ---
+            content += `
+                <div class="key-stats" style="margin-top: 1.5rem;">
+                    <div class="key-stat">
+                        <div class="key-stat-label">Avg FT Goals</div>
+                        <div class="key-stat-value">${ftAnalysis.avg_goals?.toFixed(2) || 'N/A'}</div>
+                    </div>
+                    <div class="key-stat">
+                        <div class="key-stat-label">Avg HT Goals</div>
+                        <div class="key-stat-value">${htAnalysis.avg_ht_goals?.toFixed(2) || 'N/A'}</div>
+                    </div>
+                    <div class="key-stat">
+                        <div class="key-stat-label">Max Goals</div>
+                        <div class="key-stat-value">${ftAnalysis.max_goals || 'N/A'}</div>
+                    </div>
+                    <div class="key-stat">
+                        <div class="key-stat-label">Data Quality</div>
+                        <div class="key-stat-value" style="font-size: 1rem;">${profile.data_quality || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // --- CHARACTERISTICS ---
+            if (profile.characteristics && profile.characteristics.length > 0) {
+                content += `<div style="margin-top: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: 8px;">`;
+                content += `<div style="font-size: 0.875rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem;">Match Characteristics</div>`;
+                content += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">`;
+                profile.characteristics.forEach(char => {
+                    const emoji = char === 'defensive_clash' ? '🛡️' : char === 'chaotic_match' ? '🔥' : char === 'high_stability' ? '📈' : char === 'consistent_pattern' ? '♻️' : char === 'volatile_match' ? '⚡' : '📊';
+                    content += `<span class="badge" style="background: var(--gray-200); color: var(--gray-700);">${emoji} ${char.replace(/_/g, ' ')}</span>`;
+                });
+                content += `</div></div>`;
+            }
+            
+            document.getElementById('quick-view-content').innerHTML = content;
+            document.getElementById('quick-view-modal').classList.add('active');
+        }
+
+        // Show deep analysis modal - COMPREHENSIVE ACTIONABLE DATA
+        function showDeepAnalysis(matchId) {
+            const match = findMatchById(matchId);
+            if (!match) return;
+            
+            const profile = match.match_profile || {};
+            const edges = match.best_edges || [];
+            const htAnalysis = match.ht_analysis || {};
+            const ftAnalysis = match.ft_analysis || {};
+            const matchHistory = match.match_history || [];
+            const edgeDetection = match.edge_detection || {};
+            
+            document.getElementById('deep-modal-title').textContent = `${match.home_team} vs ${match.away_team} - Deep Analysis`;
+            
+            let content = '';
+            
+            // --- 1. PROFILE & SCORES ---
+            content += `
+                <div class="accordion active">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>📊 Match Profile & Scores</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="key-stats" style="margin-bottom: 1rem;">
+                                <div class="key-stat" style="background: #fef3c7;">
+                                    <div class="key-stat-label">Interest</div>
+                                    <div class="key-stat-value" style="color: var(--orange);">${(profile.interest_score || 0).toFixed(0)}/100</div>
+                                </div>
+                                <div class="key-stat" style="background: #d1fae5;">
+                                    <div class="key-stat-label">Confidence</div>
+                                    <div class="key-stat-value" style="color: var(--emerald);">${(profile.confidence_score || 0).toFixed(0)}/100</div>
+                                </div>
+                                <div class="key-stat" style="background: #fee2e2;">
+                                    <div class="key-stat-label">Volatility</div>
+                                    <div class="key-stat-value" style="color: var(--red);">${(profile.volatility_score || 0).toFixed(0)}/100</div>
+                                </div>
+                                <div class="key-stat" style="background: #dbeafe;">
+                                    <div class="key-stat-label">Sample</div>
+                                    <div class="key-stat-value">${profile.sample_size || 0}</div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <strong>Tempo:</strong> ${profile.tempo_profile || 'N/A'} | 
+                                <strong>Scoring:</strong> ${profile.scoring_profile || 'N/A'} | 
+                                <strong>Quality:</strong> ${profile.data_quality || 'N/A'}
+                            </div>
+                            ${profile.characteristics && profile.characteristics.length > 0 ? `
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${profile.characteristics.map(char => {
+                                        const emoji = char === 'defensive_clash' ? '🛡️' : char === 'chaotic_match' ? '🔥' : char === 'high_stability' ? '📈' : char === 'consistent_pattern' ? '♻️' : char === 'volatile_match' ? '⚡' : '📊';
+                                        return `<span class="badge" style="background: var(--purple); color: white;">${emoji} ${char.replace(/_/g, ' ')}</span>`;
+                                    }).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 2. ALL EDGES (VALUE BETS) ---
+            content += `
+                <div class="accordion active">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>🔥 All Detected Edges / Value Bets</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            ${edges.length > 0 ? edges.map((edge, i) => {
+                                const edgePct = edge.edge_percent ? (edge.edge_percent * 100).toFixed(1) : '0.0';
+                                const edgeColor = edge.edge_percent > 0.1 ? 'var(--emerald)' : edge.edge_percent > 0.05 ? 'var(--green)' : 'var(--gray-600)';
+                                return `
+                                    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 8px; border-left: 4px solid ${edgeColor};">
+                                        <h4 style="margin-bottom: 0.5rem;">${i + 1}. ${edge.market || 'Unknown'}</h4>
+                                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0.5rem;">
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: var(--gray-600);">Edge %</div>
+                                                <div style="font-size: 1.25rem; font-weight: 700; color: ${edgeColor};">+${edgePct}%</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: var(--gray-600);">Fair Odd</div>
+                                                <div style="font-size: 1.25rem; font-weight: 700;">${edge.fair_odd?.toFixed(2) || 'N/A'}</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: var(--gray-600);">Market Odd</div>
+                                                <div style="font-size: 1.25rem; font-weight: 700;">${edge.market_odd?.toFixed(2) || 'N/A'}</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: var(--gray-600);">
+                                            <strong>Confidence:</strong> ${edge.confidence || 'N/A'} | 
+                                            <strong>Sample:</strong> ${edge.sample_size || 0} matches | 
+                                            <strong>Hit Rate:</strong> ${edge.hit_rate ? (edge.hit_rate * 100).toFixed(1) : 'N/A'}%
+                                        </div>
+                                        ${edge.reasons && edge.reasons.length > 0 ? `
+                                            <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray-600);">
+                                                <strong>Why:</strong> ${edge.reasons.join(', ')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('') : '<p>No edges detected. Waiting for bookmaker odds.</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 3. HT ANALYSIS TABLE ---
+            content += `
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>📊 HT (Half-Time) Analysis</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            ${buildHTTable(htAnalysis)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 4. FT ANALYSIS TABLE ---
+            content += `
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>📊 FT (Full-Time) Analysis</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            ${buildFTTable(ftAnalysis)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 5. STATISTICAL ANGLES ---
+            if (profile.statistical_angles && profile.statistical_angles.length > 0) {
+                content += `
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>📐 All Statistical Angles</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="why-detected-list">
+                                    ${profile.statistical_angles.map(angle => `<li>${angle}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // --- 6. MATCH HISTORY ---
+            if (matchHistory.length > 0) {
+                content += `
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>📜 Recent Match History</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="last-matches">
+                                    ${matchHistory.slice(0, 10).map(m => {
+                                        const totalGoals = m.home_goals !== undefined && m.away_goals !== undefined ? m.home_goals + m.away_goals : '?';
+                                        return `<div class="match-result">${totalGoals} goals</div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('deep-analysis-content').innerHTML = content;
+            document.getElementById('deep-analysis-modal').classList.add('active');
+        }
+
+        // Build HT table
+        function buildHTTable(htAnalysis) {
+            if (!htAnalysis || !htAnalysis.table) {
+                return '<p>No HT analysis available</p>';
+            }
+            
+            let html = '<table><thead><tr><th>Line</th><th>Hit Rate</th><th>Fair Odd</th><th>Sample</th></tr></thead><tbody>';
+            
+            htAnalysis.table.forEach(row => {
+                const hitRate = row.hit_rate?.toFixed(1) || '0';
+                const fairOdd = row.fair_odd?.toFixed(2) || 'N/A';
+                
+                html += `
+                    <tr>
+                        <td><strong>${row.line}</strong></td>
+                        <td>${hitRate}%</td>
+                        <td>${fairOdd}</td>
+                        <td>${row.sample_size || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Build FT table
+        function buildFTTable(ftAnalysis) {
+            if (!ftAnalysis || !ftAnalysis.table) {
+                return '<p>No FT analysis available</p>';
+            }
+            
+            let html = '<table><thead><tr><th>Line</th><th>Hit Rate</th><th>Fair Odd</th><th>Sample</th></tr></thead><tbody>';
+            
+            ftAnalysis.table.forEach(row => {
+                const hitRate = row.hit_rate?.toFixed(1) || '0';
+                const fairOdd = row.fair_odd?.toFixed(2) || 'N/A';
+                
+                html += `
+                    <tr>
+                        <td><strong>${row.line}</strong></td>
+                        <td>${hitRate}%</td>
+                        <td>${fairOdd}</td>
+                        <td>${row.sample_size || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Toggle accordion
+        function toggleAccordion(header) {
+            const accordion = header.parentElement;
+            accordion.classList.toggle('active');
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Refresh data
+        function refreshData() {
+            document.getElementById('matches-container').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Refreshing data...</p>
+                </div>
+            `;
+            loadData();
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('matches-container').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

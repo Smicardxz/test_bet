@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Bookmaker Inefficiency Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #e74c3c;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .match-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .match-teams {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .match-info {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .badge-upcoming {
+            background: #e3f2fd;
+            color: #3498db;
+        }
+        
+        .badge-high {
+            background: #d4edda;
+            color: #2ecc71;
+        }
+        
+        .badge-medium {
+            background: #fff3cd;
+            color: #f39c12;
+        }
+        
+        .badge-low {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+        
+        .signal {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .signal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .signal-type {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .signal-confidence {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        .refresh-btn {
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="refresh-btn" onclick="refreshData()">🔄 Actualiser</button>
+            <h1>🎯 Bookmaker Inefficiency Detector</h1>
+            <p class="subtitle">Statistical signals vs Market value - Clear distinction</p>
+        </header>
+        
+        <div id="loading" class="loading">
+            Chargement des données...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="content" style="display: none;">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Matches</div>
+                    <div class="stat-value" id="total-matches">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Target Matches</div>
+                    <div class="stat-value" id="target-matches">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Analyzed</div>
+                    <div class="stat-value" id="analyzed-matches">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Scan Time</div>
+                    <div class="stat-value" id="scan-time">0s</div>
+                </div>
+            </div>
+            
+            <h2 style="margin-bottom: 20px;">📊 Analyzed Matches</h2>
+            <div id="matches"></div>
+        </div>
+    </div>
+    
+    <script>
+        function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayData(data);
+                    } else {
+                        showError(data.error || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+        
+        function displayData(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            
+            // Stats
+            document.getElementById('total-matches').textContent = data.stats.total_matches;
+            document.getElementById('target-matches').textContent = data.stats.target_count;
+            document.getElementById('analyzed-matches').textContent = data.stats.analyzed_count;
+            document.getElementById('scan-time').textContent = data.stats.scan_duration.toFixed(1) + 's';
+            
+            // Matches
+            const matchesDiv = document.getElementById('matches');
+            matchesDiv.innerHTML = '';
+            
+            data.matches.forEach(match => {
+                const matchCard = document.createElement('div');
+                matchCard.className = 'match-card';
+                
+                let signalsHTML = '';
+                match.signals.forEach(signal => {
+                    const confidencePercent = (signal.confidence * 100).toFixed(0);
+                    const valueGapText = signal.has_odds && signal.value_gap !== null 
+                        ? `Value Gap: ${signal.value_gap > 0 ? '+' : ''}${signal.value_gap.toFixed(1)}%`
+                        : 'No odds';
+                    
+                    signalsHTML += `
+                        <div class="signal">
+                            <div class="signal-header">
+                                <span class="signal-type">${signal.type}</span>
+                                <span class="signal-confidence">${confidencePercent}% confidence</span>
+                            </div>
+                            <div>
+                                <span class="badge badge-${signal.strength.toLowerCase()}">${signal.strength}</span>
+                                <span class="badge ${signal.value_level === 'NO_VALUE' ? 'badge-low' : 'badge-high'}">${signal.value_level.replace('_', ' ')}</span>
+                            </div>
+                            <div style="margin-top: 10px; color: #7f8c8d; font-size: 0.9rem;">
+                                ${valueGapText} | Priority: ${signal.priority_score.toFixed(0)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                matchCard.innerHTML = `
+                    <div class="match-header">
+                        <div class="match-teams">${match.home_team} vs ${match.away_team}</div>
+                        <span class="badge badge-upcoming">${match.status}</span>
+                    </div>
+                    <div class="match-info">
+                        📍 ${match.country} - ${match.competition} | ⏰ ${match.kickoff_time}
+                    </div>
+                    <div class="match-info">
+                        Target: ${match.target_level} (${match.target_score}/100) | 
+                        Coverage: ${match.coverage_score}% (${match.coverage_level})
+                    </div>
+                    ${signalsHTML}
+                `;
+                
+                matchesDiv.appendChild(matchCard);
+            });
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'none';
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = 'Erreur: ' + message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function refreshData() {
+            fetch('/api/refresh')
+                .then(() => loadData());
+        }
+        
+        // Charger au démarrage
+        loadData();
+        
+        // Auto-refresh toutes les 5 minutes
+        setInterval(loadData, 300000);
+    </script>
+</body>
+</html>
