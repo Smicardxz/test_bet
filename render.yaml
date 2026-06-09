@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: betiq-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app_flask:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: API_FOOTBALL_KEY
+        sync: false
+      - key: API_FOOTBALL_URL
+        value: https://v3.football.api-sports.io
+      - key: TRACKING_RESET_AT
+        sync: false
+      - key: ODDS_API_KEY
+        sync: false

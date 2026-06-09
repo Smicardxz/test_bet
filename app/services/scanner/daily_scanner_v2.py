@@ -137,12 +137,12 @@ class DailyScannerServiceV2:
         self.is_real_data = is_real_data
         self.anomaly_engine = anomaly_engine or AnomalyEngine()
         
-        # Configuration
-        self.min_sample_size = 8
-        self.min_anomaly_score = 50.0
-        self.min_confidence = ConfidenceCategory.MEDIUM
-        self.min_data_quality = 0.6
-        self.max_results = 20
+        # Configuration - RELAXED FOR MASSIVE SCANNING
+        self.min_sample_size = 3  # Très bas pour LAYER 1
+        self.min_anomaly_score = 30.0  # Baissé pour plus de matches
+        self.min_confidence = ConfidenceCategory.LOW  # Inclure LOW confidence
+        self.min_data_quality = 0.4  # Baissé pour inclusivité
+        self.max_results = 100  # Augmenté pour plus de visibilité
         
         # Market priorities
         self.market_config = self._get_market_config()
@@ -154,9 +154,9 @@ class DailyScannerServiceV2:
         logger.info(f"DailyScannerServiceV2 initialized: {source_tag} data, provider: {provider.config.name}")
     
     def _get_market_config(self) -> Dict[str, Dict]:
-        """Get market configuration with priorities"""
+        """Get market configuration with priorities - DIVERSIFIED"""
         return {
-            # CRITICAL Priority
+            # CRITICAL Priority - Expanded
             "ht_under_05": {
                 "priority": MarketPriority.CRITICAL,
                 "weight": 1.5,
@@ -172,8 +172,13 @@ class DailyScannerServiceV2:
                 "weight": 1.3,
                 "line": 8.5
             },
+            "btts": {
+                "priority": MarketPriority.CRITICAL,
+                "weight": 1.3,
+                "line": None
+            },
             
-            # HIGH Priority
+            # HIGH Priority - Diversified
             "ft_under_25": {
                 "priority": MarketPriority.HIGH,
                 "weight": 1.2,
@@ -189,17 +194,49 @@ class DailyScannerServiceV2:
                 "weight": 1.1,
                 "line": 0.5
             },
+            "ft_over_25": {
+                "priority": MarketPriority.HIGH,
+                "weight": 1.1,
+                "line": 2.5
+            },
+            "ft_over_35": {
+                "priority": MarketPriority.HIGH,
+                "weight": 1.1,
+                "line": 3.5
+            },
             
-            # MEDIUM Priority
-            "btts": {
+            # MEDIUM Priority - New patterns
+            "ht_over_15": {
+                "priority": MarketPriority.MEDIUM,
+                "weight": 1.0,
+                "line": 1.5
+            },
+            "ft_over_45": {
+                "priority": MarketPriority.MEDIUM,
+                "weight": 1.0,
+                "line": 4.5
+            },
+            "both_teams_to_score": {
                 "priority": MarketPriority.MEDIUM,
                 "weight": 1.0,
                 "line": None
             },
-            "ft_over_25": {
+            "first_half_goals": {
                 "priority": MarketPriority.MEDIUM,
                 "weight": 0.9,
-                "line": 2.5
+                "line": 0.5
+            },
+            
+            # LOW Priority - Experimental
+            "correct_score": {
+                "priority": MarketPriority.LOW,
+                "weight": 0.8,
+                "line": None
+            },
+            "asian_handicap": {
+                "priority": MarketPriority.LOW,
+                "weight": 0.7,
+                "line": None
             }
         }
     

@@ -1,5 +1,11 @@
 # Core
 python-dotenv==1.0.0
+supabase>=2.3.0
+
+# Web Framework
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
 
 # HTTP & Requests
 httpx==0.26.0
