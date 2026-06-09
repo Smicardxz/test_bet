@@ -3,7 +3,7 @@ Provider Adapter for StatsEngine
 Converts provider matches to format usable by StatsEngine
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from datetime import datetime
 from dataclasses import dataclass, asdict
 
