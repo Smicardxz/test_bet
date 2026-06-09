@@ -10,6 +10,7 @@ LAYER 3 = MARKET INEFFICIENCY (avec odds si disponibles)
 OBJECTIF : Scanner massivement et détecter tous les patterns intéressants
 """
 
+from __future__ import annotations
 from typing import List, Dict, Optional, Any, Union, TYPE_CHECKING
 from dataclasses import dataclass, field
 from datetime import datetime

@@ -3,6 +3,7 @@ Daily Scanner Service V2 - With DataProvider Integration
 Automatic anomaly detection for daily matches using external data providers
 """
 
+from __future__ import annotations
 from typing import List, Dict, Optional, Union, TYPE_CHECKING, Any
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -286,10 +287,34 @@ class DailyScannerServiceV2:
         source_tag = "REAL" if self.is_real_data else "MOCK"
         logger.info(f"[{source_tag}] Fetched {len(matches)} matches")
         
-        # 2. Scan each match
-        all_results = []
+        # 2. Filtrer par status (PHASE 1)
+        upcoming_matches = []
+        live_matches = []
+        finished_matches = []
+        cancelled_matches = []
+        other_matches = []
         
         for match in matches:
+            status = getattr(match, 'status', 'UNKNOWN').upper()
+            
+            if status in ['UPCOMING', 'NS']:  # NS = Not Started
+                upcoming_matches.append(match)
+            elif status in ['LIVE', 'IN_PLAY', 'PAUSED']:
+                live_matches.append(match)
+            elif status in ['FINISHED', 'FT', 'AWARDED', 'WALKOVER']:
+                finished_matches.append(match)
+            elif status in ['CANCELLED', 'POSTPONED', 'ABANDONED', 'SUSPENDED']:
+                cancelled_matches.append(match)
+            else:
+                other_matches.append(match)
+        
+        logger.info(f"[{source_tag}] Status breakdown - Upcoming: {len(upcoming_matches)}, Live: {len(live_matches)}, Finished: {len(finished_matches)}, Cancelled: {len(cancelled_matches)}, Other: {len(other_matches)}")
+        
+        # 3. Scanner uniquement UPCOMING et LIVE
+        target_matches = upcoming_matches + live_matches
+        all_results = []
+        
+        for match in target_matches:
             try:
                 match_results = self._scan_match(match)
                 all_results.extend(match_results)
@@ -324,15 +349,31 @@ class DailyScannerServiceV2:
         source_status.odds_available = sum(1 for r in final_results if r.bookmaker_odds is not None)
         source_status.missing_odds = sum(1 for r in final_results if r.bookmaker_odds is None)
         
+        # 9. Status breakdown (PHASE 1)
+        status_breakdown = {
+            "upcoming_count": len(upcoming_matches),
+            "live_count": len(live_matches),
+            "finished_count": len(finished_matches),
+            "cancelled_count": len(cancelled_matches),
+            "other_count": len(other_matches),
+            "target_matches_count": len(target_matches),
+            "analyzed_upcoming": len([r for r in final_results if any(m.status in ['UPCOMING', 'NS'] for m in upcoming_matches if m.id == r.fixture_id)]),
+            "analyzed_live": len([r for r in final_results if any(m.status in ['LIVE', 'IN_PLAY', 'PAUSED'] for m in live_matches if m.id == r.fixture_id)]),
+            "skipped_finished": len(finished_matches),
+            "skipped_cancelled": len(cancelled_matches)
+        }
+        
         # Log statistics
         logger.info(f"Scan Statistics: {self.scan_stats.to_dict()}")
+        logger.info(f"Status breakdown: {status_breakdown}")
         logger.info(f"Returning top {len(final_results)} results")
         
         return {
             "source_status": source_status.to_dict(),
             "single_bets": [bet.to_dict() for bet in single_bets],
             "combinations": [combo.to_dict() for combo in combinations],
-            "raw_anomalies": [r.to_dict() for r in final_results]
+            "raw_anomalies": [r.to_dict() for r in final_results],
+            "status_breakdown": status_breakdown
         }
     
     def _convert_to_bet_candidates(self, scan_results: List[ScanResult]) -> List:
@@ -380,42 +421,55 @@ class DailyScannerServiceV2:
         # 3. Get H2H (optional)
         h2h_available = self._get_h2h(match.home_team.id, match.away_team.id)
         
-        # 4. Get odds
+        # 4. Get odds (OPTIONNEL - ne pas bloquer l'analyse)
         odds_response = self.provider.get_odds(match.id)
         
         if not odds_response.success:
-            if self.is_real_data:
-                # In real mode, skip if no odds available
-                logger.warning(f"[{source_tag}] Ignored {match.id}: Odds missing")
-                self.scan_stats.ignored_no_odds += 1
-                return results
-            else:
-                # In mock mode, generate default odds
-                logger.debug(f"[{source_tag}] No odds, using defaults (mock mode)")
-                odds_list = self._generate_default_odds()
+            # Ne pas skipper l'analyse si pas d'odds
+            logger.info(f"[{source_tag}] No odds for {match.id} - continuing with statistical analysis")
+            odds_list = []  # Pas d'odds = analyse statistique uniquement
         else:
             odds_list = odds_response.data
             logger.debug(f"[{source_tag}] Found {len(odds_list)} odds for match {match.id}")
         
-        # 5. Analyze each market
-        for odds in odds_list:
+        # 5. Analyze each market (si odds disponibles)
+        if odds_list:
+            for odds in odds_list:
+                try:
+                    result = self._analyze_market(
+                        match=match,
+                        odds=odds,
+                        home_stats=home_stats,
+                        away_stats=away_stats,
+                        data_quality=data_quality,
+                        h2h_available=h2h_available
+                    )
+                    
+                    if result:
+                        results.append(result)
+                        logger.debug(f"[{source_tag}] Anomaly found: {result.market_type} (score: {result.final_score:.1f})")
+                
+                except Exception as e:
+                    logger.warning(f"[{source_tag}] Error analyzing market {odds.market_type}: {e}")
+                    continue
+        
+        # 6. Analyse statistique même sans odds
+        if not odds_list:
             try:
-                result = self._analyze_market(
+                statistical_result = self._analyze_statistical_patterns(
                     match=match,
-                    odds=odds,
                     home_stats=home_stats,
                     away_stats=away_stats,
                     data_quality=data_quality,
                     h2h_available=h2h_available
                 )
                 
-                if result:
-                    results.append(result)
-                    logger.debug(f"[{source_tag}] Anomaly found: {result.market_type} (score: {result.final_score:.1f})")
+                if statistical_result:
+                    results.append(statistical_result)
+                    logger.debug(f"[{source_tag}] Statistical pattern found: {statistical_result.market_type} (score: {statistical_result.final_score:.1f})")
             
             except Exception as e:
-                logger.warning(f"[{source_tag}] Error analyzing market {odds.market_type}: {e}")
-                continue
+                logger.warning(f"[{source_tag}] Error analyzing statistical patterns: {e}")
         
         return results
     
@@ -609,7 +663,20 @@ class DailyScannerServiceV2:
         return filtered
     
     def _rank_results(self, results: List[ScanResult]) -> List[ScanResult]:
-        """Rank and sort results by final score"""
+        """Rank and sort results by final score - PHASE 5: Useful bet tracks"""
+        
+        # PHASE 5: Définir les marchés utiles vs extrêmes
+        USEFUL_MARKETS = {
+            'HT_UNDER_0_5', 'HT_UNDER_1_5', 'HT_OVER_0_5', 'HT_OVER_1_5',
+            'UNDER_1_5', 'UNDER_2_5', 'UNDER_3_5',
+            'OVER_1_5', 'OVER_2_5',
+            'BTTS_YES', 'BTTS_NO'
+        }
+        
+        EXTREME_MARKETS = {
+            'UNDER_4_5', 'UNDER_5_5', 'UNDER_6_5', 'UNDER_7_5', 'UNDER_8_5',
+            'UNDER_9_5', 'UNDER_10_5', 'UNDER_11_5', 'UNDER_12_5'
+        }
         
         for result in results:
             # Base score from anomaly
@@ -619,23 +686,526 @@ class DailyScannerServiceV2:
             market_info = self.market_config.get(result.market_type, {})
             priority_weight = market_info.get("weight", 1.0)
             
+            # PHASE 5: Bonus pour marchés utiles
+            market_bonus = 0
+            if result.market_type in USEFUL_MARKETS:
+                market_bonus = 15  # Bonus pour marchés utiles
+            elif result.market_type in EXTREME_MARKETS:
+                market_bonus = -20  # Pénalité pour marchés extrêmes
+            
             # Data quality bonus
             quality_bonus = result.data_quality_score * 10
             
             # H2H bonus
             h2h_bonus = 5 if result.h2h_available else 0
             
+            # PHASE 5: Hit rate bonus (plus le hit rate est élevé, meilleur)
+            hit_rate = result.anomaly_result.hit_rate if result.anomaly_result else 0.5
+            hit_rate_bonus = hit_rate * 10
+            
+            # PHASE 5: Sample size bonus (plus d'échantillons = plus fiable)
+            sample_size = result.anomaly_result.sample_size if result.anomaly_result else 0
+            sample_bonus = min(sample_size / 10, 10)  # Max 10 points bonus
+            
             # Calculate final score
-            result.final_score = (base_score * priority_weight) + quality_bonus + h2h_bonus
+            result.final_score = (base_score * priority_weight) + quality_bonus + h2h_bonus + market_bonus + hit_rate_bonus + sample_bonus
         
         # Sort by final score
         sorted_results = sorted(results, key=lambda x: x.final_score, reverse=True)
+        
+        # PHASE 5: Définir le best pick pour chaque résultat
+        for result in sorted_results:
+            if result.anomaly_result:
+                # Créer le best_pick selon les spécifications
+                result.best_pick = {
+                    "market": result.market_type,
+                    "label": self._get_market_label(result.market_type),
+                    "hit_rate": round(result.anomaly_result.hit_rate * 100, 1),
+                    "fair_odd": round(1 / result.anomaly_result.hit_rate, 2) if result.anomaly_result.hit_rate > 0 else 0.0,
+                    "sample_size": result.anomaly_result.sample_size,
+                    "confidence": self._get_confidence_level(result.anomaly_result.confidence_category),
+                    "why": [result.anomaly_result.pattern_description] if result.anomaly_result.pattern_description else [],
+                    "is_useful": result.market_type in USEFUL_MARKETS,
+                    "is_extreme": result.market_type in EXTREME_MARKETS
+                }
         
         # Assign ranks
         for i, result in enumerate(sorted_results, 1):
             result.rank = i
         
         return sorted_results
+    
+    def _get_market_label(self, market_type: str) -> str:
+        """Get human readable market label"""
+        labels = {
+            'HT_UNDER_0_5': 'HT Under 0.5',
+            'HT_UNDER_1_5': 'HT Under 1.5',
+            'HT_OVER_0_5': 'HT Over 0.5',
+            'HT_OVER_1_5': 'HT Over 1.5',
+            'UNDER_1_5': 'Under 1.5',
+            'UNDER_2_5': 'Under 2.5',
+            'UNDER_3_5': 'Under 3.5',
+            'OVER_1_5': 'Over 1.5',
+            'OVER_2_5': 'Over 2.5',
+            'BTTS_YES': 'BTTS Yes',
+            'BTTS_NO': 'BTTS No',
+            'LOW_TEMPO': 'Low Tempo',
+            'HIGH_TEMPO': 'High Tempo',
+            'SECOND_HALF_GOALS': 'Second Half Goals',
+            'LATE_GOAL_PROFILE': 'Late Goals',
+            'VOLATILE_MATCH': 'Volatile Match',
+            'CHAOTIC_MATCH': 'Chaotic Match',
+            'HOME_DOMINANT': 'Home Dominant',
+            'AWAY_WEAKNESS': 'Away Weakness',
+            'ASYMMETRIC_SCORING': 'Asymmetric Scoring'
+        }
+        return labels.get(market_type, market_type)
+    
+    def _get_confidence_level(self, confidence_category) -> str:
+        """Get confidence level string"""
+        try:
+            return confidence_category.value.upper()
+        except:
+            return "MEDIUM"
+    
+    def _analyze_statistical_patterns(
+        self,
+        match: MatchDetails,
+        home_stats: Any,
+        away_stats: Any,
+        data_quality: float,
+        h2h_available: Any
+    ) -> Optional[ScanResult]:
+        """Analyze statistical patterns without odds"""
+        
+        source_tag = "REAL" if self.is_real_data else "MOCK"
+        
+        try:
+            # Calculer les patterns statistiques
+            patterns = self._calculate_statistical_patterns(home_stats, away_stats, h2h_available)
+            
+            if not patterns:
+                return None
+            
+            # Choisir le meilleur pattern
+            best_pattern = max(patterns, key=lambda p: p['score'])
+            
+            # Créer un ScanResult sans odds
+            result = ScanResult(
+                fixture_id=match.id,
+                home_team=match.home_team.name,
+                away_team=match.away_team.name,
+                competition=match.competition.name,
+                kickoff_time=match.kickoff_time,
+                market_type=best_pattern['market'],
+                market_priority=MarketPriority.MEDIUM,
+                anomaly_result=AnomalyResult(
+                    anomaly_score=best_pattern['score'],
+                    confidence_category=ConfidenceCategory.MEDIUM,
+                    statistical_significance=best_pattern.get('significance', 0.5),
+                    pattern_description=best_pattern.get('description', ''),
+                    hit_rate=best_pattern.get('hit_rate', 0.5),
+                    sample_size=best_pattern.get('sample_size', 0),
+                    variance=best_pattern.get('variance', 0.1)
+                ),
+                data_quality_score=data_quality,
+                analysis_timestamp=datetime.now(),
+                waiting_for_odds=True  # Indiquer qu'on attend les odds
+            )
+            
+            # PHASE 6: Ajouter les scores de qualité et intérêt
+            result.interest_score = self._calculate_interest_score(best_pattern, data_quality)
+            result.confidence_score = self._calculate_confidence_score(best_pattern, data_quality)
+            result.volatility_score = self._calculate_volatility_score(best_pattern)
+            result.data_quality_score = data_quality
+            
+            logger.debug(f"[{source_tag}] Statistical pattern: {best_pattern['market']} (score: {best_pattern['score']:.1f})")
+            return result
+            
+        except Exception as e:
+            logger.error(f"[{source_tag}] Error in statistical pattern analysis: {e}")
+            return None
+    
+    def _calculate_statistical_patterns(self, home_stats: Any, away_stats: Any, h2h_available: Any) -> List[Dict]:
+        """Calculate various statistical patterns - PHASE 4: Diversified profiles"""
+        
+        patterns = []
+        
+        try:
+            # Get basic stats
+            home_matches = getattr(home_stats, 'matches_count', 10)
+            away_matches = getattr(away_stats, 'matches_count', 10)
+            total_matches = home_matches + away_matches
+            
+            # HT_UNDER_PROFILE
+            if hasattr(home_stats, 'ht_goals_avg') and hasattr(away_stats, 'ht_goals_avg'):
+                ht_avg = (home_stats.ht_goals_avg + away_stats.ht_goals_avg) / 2
+                if ht_avg < 0.8:  # Moins de 0.8 buts en moyenne en 1ère mi-temps
+                    patterns.append({
+                        'market': 'HT_UNDER_1_5',
+                        'score': 85 - (ht_avg * 20),
+                        'description': f'Low HT goals average: {ht_avg:.2f}',
+                        'hit_rate': 0.75,
+                        'sample_size': total_matches,
+                        'significance': 0.7
+                    })
+                elif ht_avg < 1.2:  # Moins de 1.2 buts = HT Under 0.5 possible
+                    patterns.append({
+                        'market': 'HT_UNDER_0_5',
+                        'score': 80 - (ht_avg * 15),
+                        'description': f'Very low HT goals: {ht_avg:.2f}',
+                        'hit_rate': 0.65,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+            
+            # HT_OVER_PROFILE
+            if hasattr(home_stats, 'ht_goals_avg') and hasattr(away_stats, 'ht_goals_avg'):
+                ht_avg = (home_stats.ht_goals_avg + away_stats.ht_goals_avg) / 2
+                if ht_avg > 1.8:  # Plus de 1.8 buts en moyenne en 1ère mi-temps
+                    patterns.append({
+                        'market': 'HT_OVER_1_5',
+                        'score': 70 + (ht_avg * 10),
+                        'description': f'High HT goals average: {ht_avg:.2f}',
+                        'hit_rate': 0.60,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+                elif ht_avg > 1.3:  # Plus de 1.3 buts = HT Over 0.5 probable
+                    patterns.append({
+                        'market': 'HT_OVER_0_5',
+                        'score': 65 + (ht_avg * 8),
+                        'description': f'Good HT scoring: {ht_avg:.2f}',
+                        'hit_rate': 0.70,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+            
+            # FT_UNDER_PROFILE
+            if hasattr(home_stats, 'total_goals_avg') and hasattr(away_stats, 'total_goals_avg'):
+                ft_avg = (home_stats.total_goals_avg + away_stats.total_goals_avg) / 2
+                if ft_avg < 1.8:  # Moins de 1.8 buts = Under 1.5 fort
+                    patterns.append({
+                        'market': 'UNDER_1_5',
+                        'score': 80 + ((2.0 - ft_avg) * 15),
+                        'description': f'Very low scoring: {ft_avg:.2f} goals avg',
+                        'hit_rate': 0.70,
+                        'sample_size': total_matches,
+                        'significance': 0.7
+                    })
+                elif ft_avg < 2.3:  # Moins de 2.3 buts = Under 2.5 probable
+                    patterns.append({
+                        'market': 'UNDER_2_5',
+                        'score': 75 + ((2.5 - ft_avg) * 10),
+                        'description': f'Low scoring games: {ft_avg:.2f} goals avg',
+                        'hit_rate': 0.65,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+                elif ft_avg < 3.0:  # Moins de 3.0 buts = Under 3.5 possible
+                    patterns.append({
+                        'market': 'UNDER_3_5',
+                        'score': 60 + ((3.5 - ft_avg) * 8),
+                        'description': f'Moderate scoring: {ft_avg:.2f} goals avg',
+                        'hit_rate': 0.60,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+            
+            # FT_OVER_PROFILE
+            if hasattr(home_stats, 'total_goals_avg') and hasattr(away_stats, 'total_goals_avg'):
+                ft_avg = (home_stats.total_goals_avg + away_stats.total_goals_avg) / 2
+                if ft_avg > 3.2:  # Plus de 3.2 buts = Over 2.5 fort
+                    patterns.append({
+                        'market': 'OVER_2_5',
+                        'score': 70 + ((ft_avg - 3.2) * 12),
+                        'description': f'High scoring games: {ft_avg:.2f} goals avg',
+                        'hit_rate': 0.55,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+                elif ft_avg > 2.8:  # Plus de 2.8 buts = Over 2.5 probable
+                    patterns.append({
+                        'market': 'OVER_1_5',
+                        'score': 75 + ((ft_avg - 2.8) * 10),
+                        'description': f'Good scoring: {ft_avg:.2f} goals avg',
+                        'hit_rate': 0.65,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+            
+            # BTTS_PROFILE
+            if hasattr(home_stats, 'btts_rate') and hasattr(away_stats, 'btts_rate'):
+                btts_avg = (home_stats.btts_rate + away_stats.btts_rate) / 2
+                if btts_avg > 0.75:  # Plus de 75% BTTS
+                    patterns.append({
+                        'market': 'BTTS_YES',
+                        'score': 75 + (btts_avg * 10),
+                        'description': f'Very high BTTS rate: {btts_avg:.2f}',
+                        'hit_rate': btts_avg,
+                        'sample_size': total_matches,
+                        'significance': 0.7
+                    })
+                elif btts_avg > 0.6:  # Plus de 60% BTTS
+                    patterns.append({
+                        'market': 'BTTS_YES',
+                        'score': 65 + (btts_avg * 8),
+                        'description': f'High BTTS rate: {btts_avg:.2f}',
+                        'hit_rate': btts_avg,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+                elif btts_avg < 0.25:  # Moins de 25% BTTS
+                    patterns.append({
+                        'market': 'BTTS_NO',
+                        'score': 75 + ((1 - btts_avg) * 10),
+                        'description': f'Very low BTTS rate: {btts_avg:.2f}',
+                        'hit_rate': 1 - btts_avg,
+                        'sample_size': total_matches,
+                        'significance': 0.7
+                    })
+                elif btts_avg < 0.4:  # Moins de 40% BTTS
+                    patterns.append({
+                        'market': 'BTTS_NO',
+                        'score': 65 + ((1 - btts_avg) * 8),
+                        'description': f'Low BTTS rate: {btts_avg:.2f}',
+                        'hit_rate': 1 - btts_avg,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+            
+            # LOW_TEMPO / HIGH_TEMPO
+            if hasattr(home_stats, 'total_goals_avg') and hasattr(away_stats, 'total_goals_avg'):
+                goals_avg = (home_stats.total_goals_avg + away_stats.total_goals_avg) / 2
+                if goals_avg < 2.0:  # Moins de 2 buts = LOW_TEMPO
+                    patterns.append({
+                        'market': 'LOW_TEMPO',
+                        'score': 70 + ((2.5 - goals_avg) * 12),
+                        'description': f'Low tempo matches: {goals_avg:.2f} goals avg',
+                        'hit_rate': 0.65,
+                        'sample_size': total_matches,
+                        'significance': 0.6
+                    })
+                elif goals_avg > 3.0:  # Plus de 3 buts = HIGH_TEMPO
+                    patterns.append({
+                        'market': 'HIGH_TEMPO',
+                        'score': 70 + ((goals_avg - 3.0) * 12),
+                        'description': f'High tempo matches: {goals_avg:.2f} goals avg',
+                        'hit_rate': 0.55,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+            
+            # SECOND_HALF_GOALS
+            if hasattr(home_stats, 'second_half_goals_avg') and hasattr(away_stats, 'second_half_goals_avg'):
+                sh_avg = (home_stats.second_half_goals_avg + away_stats.second_half_goals_avg) / 2
+                if sh_avg > 1.8:  # Plus de buts en 2ème mi-temps
+                    patterns.append({
+                        'market': 'SECOND_HALF_GOALS',
+                        'score': 65 + (sh_avg * 8),
+                        'description': f'Second half strong: {sh_avg:.2f} goals avg',
+                        'hit_rate': 0.60,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+            
+            # LATE_GOAL_PROFILE (basé sur buts après 75')
+            if hasattr(home_stats, 'late_goals_rate') and hasattr(away_stats, 'late_goals_rate'):
+                late_avg = (home_stats.late_goals_rate + away_stats.late_goals_rate) / 2
+                if late_avg > 0.3:  # Plus de 30% buts tardifs
+                    patterns.append({
+                        'market': 'LATE_GOAL_PROFILE',
+                        'score': 60 + (late_avg * 15),
+                        'description': f'Late goals frequent: {late_avg:.2f} rate',
+                        'hit_rate': 0.45,
+                        'sample_size': total_matches,
+                        'significance': 0.4
+                    })
+            
+            # VOLATILE_MATCH
+            if hasattr(home_stats, 'variance') and hasattr(away_stats, 'variance'):
+                variance_avg = (home_stats.variance + away_stats.variance) / 2
+                if variance_avg > 1.5:  # Variance élevée
+                    patterns.append({
+                        'market': 'VOLATILE_MATCH',
+                        'score': 60 + (variance_avg * 10),
+                        'description': f'High variance: {variance_avg:.2f}',
+                        'hit_rate': 0.40,
+                        'sample_size': total_matches,
+                        'significance': 0.4
+                    })
+                elif variance_avg > 0.8:  # Variance modérée
+                    patterns.append({
+                        'market': 'CHAOTIC_MATCH',
+                        'score': 55 + (variance_avg * 8),
+                        'description': f'Moderate variance: {variance_avg:.2f}',
+                        'hit_rate': 0.35,
+                        'sample_size': total_matches,
+                        'significance': 0.3
+                    })
+            
+            # HOME_DOMINANT
+            if hasattr(home_stats, 'home_win_rate') and hasattr(away_stats, 'away_loss_rate'):
+                home_dominance = home_stats.home_win_rate * away_stats.away_loss_rate
+                if home_dominance > 0.6:  # Forte dominance à domicile
+                    patterns.append({
+                        'market': 'HOME_DOMINANT',
+                        'score': 65 + (home_dominance * 15),
+                        'description': f'Home dominance: {home_dominance:.2f}',
+                        'hit_rate': 0.65,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+            
+            # AWAY_WEAKNESS
+            if hasattr(away_stats, 'away_loss_rate') and hasattr(away_stats, 'away_goals_conceded_avg'):
+                away_weakness = away_stats.away_loss_rate * away_stats.away_goals_conceded_avg
+                if away_weakness > 1.5:  # Faiblesse extérieure forte
+                    patterns.append({
+                        'market': 'AWAY_WEAKNESS',
+                        'score': 60 + (away_weakness * 10),
+                        'description': f'Away weakness: {away_weakness:.2f}',
+                        'hit_rate': 0.60,
+                        'sample_size': total_matches,
+                        'significance': 0.5
+                    })
+            
+            # ASYMMETRIC_SCORING
+            if hasattr(home_stats, 'goals_for_avg') and hasattr(home_stats, 'goals_against_avg') and \
+               hasattr(away_stats, 'goals_for_avg') and hasattr(away_stats, 'goals_against_avg'):
+                
+                home_balance = abs(home_stats.goals_for_avg - home_stats.goals_against_avg)
+                away_balance = abs(away_stats.goals_for_avg - away_stats.goals_against_avg)
+                
+                if home_balance > 1.5 or away_balance > 1.5:  # Asymétrie forte
+                    patterns.append({
+                        'market': 'ASYMMETRIC_SCORING',
+                        'score': 55 + max(home_balance, away_balance) * 8,
+                        'description': f'Asymmetric scoring: H:{home_balance:.1f} A:{away_balance:.1f}',
+                        'hit_rate': 0.40,
+                        'sample_size': total_matches,
+                        'significance': 0.4
+                    })
+            
+        except Exception as e:
+            logger.error(f"Error calculating patterns: {e}")
+        
+        return patterns
+    
+    def _calculate_interest_score(self, pattern: Dict, data_quality: float) -> float:
+        """PHASE 6: Calculate interest score (0-100) based on statistical interest"""
+        
+        score = 50.0  # Base score
+        
+        # Hit rate influence
+        hit_rate = pattern.get('hit_rate', 0.5)
+        if hit_rate > 0.7:
+            score += 20
+        elif hit_rate > 0.6:
+            score += 10
+        elif hit_rate < 0.3:
+            score += 5  # Low hit rate can be interesting for contrarian bets
+        
+        # Sample size influence
+        sample_size = pattern.get('sample_size', 0)
+        if sample_size > 50:
+            score += 15
+        elif sample_size > 20:
+            score += 10
+        elif sample_size > 10:
+            score += 5
+        
+        # Significance influence
+        significance = pattern.get('significance', 0.5)
+        score += significance * 20
+        
+        # Market type influence (certain markets more interesting)
+        market = pattern.get('market', '')
+        if 'BTTS' in market:
+            score += 10
+        elif 'HT_' in market:
+            score += 8
+        elif 'VOLATILE' in market or 'CHAOTIC' in market:
+            score += 5
+        
+        # Data quality influence
+        score += data_quality * 10
+        
+        return min(max(score, 0), 100)
+    
+    def _calculate_confidence_score(self, pattern: Dict, data_quality: float) -> float:
+        """PHASE 6: Calculate confidence score (0-100) based on data reliability"""
+        
+        score = 0.0
+        
+        # Sample size is most important for confidence
+        sample_size = pattern.get('sample_size', 0)
+        if sample_size > 100:
+            score += 40
+        elif sample_size > 50:
+            score += 30
+        elif sample_size > 20:
+            score += 20
+        elif sample_size > 10:
+            score += 10
+        elif sample_size > 5:
+            score += 5
+        
+        # Hit rate stability
+        hit_rate = pattern.get('hit_rate', 0.5)
+        if 0.4 <= hit_rate <= 0.8:  # Reasonable hit rates
+            score += 20
+        elif 0.3 <= hit_rate <= 0.9:
+            score += 15
+        else:
+            score += 5  # Extreme hit rates are less reliable
+        
+        # Statistical significance
+        significance = pattern.get('significance', 0.5)
+        score += significance * 25
+        
+        # Data quality
+        score += data_quality * 15
+        
+        return min(max(score, 0), 100)
+    
+    def _calculate_volatility_score(self, pattern: Dict) -> float:
+        """PHASE 6: Calculate volatility score (0-100) based on pattern variance"""
+        
+        score = 50.0  # Base volatility
+        
+        # Market type volatility
+        market = pattern.get('market', '')
+        if 'VOLATILE' in market or 'CHAOTIC' in market:
+            score += 30
+        elif 'LATE_GOAL' in market:
+            score += 25
+        elif 'BTTS' in market:
+            score += 20
+        elif 'OVER' in market:
+            score += 15
+        elif 'UNDER' in market:
+            score += 10
+        elif 'HT_' in market:
+            score += 5
+        
+        # Hit rate volatility (extreme rates = more volatile)
+        hit_rate = pattern.get('hit_rate', 0.5)
+        if hit_rate > 0.8 or hit_rate < 0.2:
+            score += 20
+        elif hit_rate > 0.7 or hit_rate < 0.3:
+            score += 10
+        
+        # Sample size (smaller samples = more volatile)
+        sample_size = pattern.get('sample_size', 0)
+        if sample_size < 10:
+            score += 15
+        elif sample_size < 20:
+            score += 10
+        elif sample_size < 50:
+            score += 5
+        
+        return min(max(score, 0), 100)
     
     def get_summary(self, results: List[ScanResult]) -> Dict:
         """Generate summary statistics"""
