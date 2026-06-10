@@ -179,57 +179,100 @@ print(f"Shadow picks generated: {len(shadow_predictions)}")
 
 sim = build_bankroll_simulation(rows, shadow_predictions)
 
-# ─── Phase 4 — Print validation table ───────────────────────────────────────
+# ─── Validation table ────────────────────────────────────────────────────────
 
-STRATEGIES = [
-    "BETIQ_LIVE_SAFE",
-    "SHADOW_TEAM_GOALS",
-    "TEAM_GOALS_CONSERVATIVE",
-    "SHADOW_BTTS",
-    "NO_EXTREME_UNDERS",
-    "SHADOW_MARKET_V1",
-]
+REQUIRED_STRATEGIES = {
+    "BETIQ_LIVE_SAFE", "SHADOW_TEAM_GOALS", "TEAM_GOALS_CONSERVATIVE",
+    "SHADOW_BTTS", "NO_EXTREME_UNDERS", "SHADOW_MARKET_V1",
+}
+
+strategies_by_name = {s["strategy"]: s for s in sim["strategies"]}
 
 print()
-print("=" * 85)
-print(f"{'Strategy':<28} {'Final BK':>9} {'ROI':>7} {'Max DD':>8} {'LLS':>5} {'PF':>6} {'Settled':>8}")
-print("-" * 85)
+print("=" * 100)
+print(f"{'Strategy':<28} {'Final BK':>9} {'Profit':>8} {'ROI':>7} {'Max DD':>8} {'Peak BK':>8} {'Low BK':>8} {'LLS':>4} {'Vol':>7} {'Picks':>6}")
+print("-" * 100)
 
 all_ok = True
-for s in STRATEGIES:
-    m = sim["individual_strategies"].get(s, {})
+for name in sorted(REQUIRED_STRATEGIES):
+    m = strategies_by_name.get(name)
     if not m:
+        print(f"{name:<28}  MISSING — FAIL")
         all_ok = False
-        print(f"{s:<28}  NO DATA")
         continue
+
+    # Validate required fields are present
+    required_fields = [
+        "strategy", "starting_bankroll", "final_bankroll", "profit", "roi",
+        "settled_picks", "wins", "losses", "hit_rate", "avg_odd",
+        "max_drawdown_units", "max_drawdown_percent", "peak_bankroll",
+        "lowest_bankroll", "longest_win_streak", "longest_losing_streak",
+        "profit_factor", "volatility_score", "equity_curve",
+    ]
+    missing_fields = [f for f in required_fields if f not in m]
+    if missing_fields:
+        print(f"{name:<28}  MISSING FIELDS: {missing_fields}")
+        all_ok = False
+        continue
+
+    # Validate equity_curve item format
+    if m["equity_curve"] and len(m["equity_curve"]) > 1:
+        ec_item = m["equity_curve"][1]
+        ec_required = ["index", "settled_at", "fixture_id", "match", "market",
+                       "result", "odd", "stake", "profit_loss", "bankroll_after"]
+        missing_ec = [f for f in ec_required if f not in ec_item]
+        if missing_ec:
+            print(f"{name:<28}  EQUITY_CURVE missing fields: {missing_ec}")
+            all_ok = False
+            continue
+
     print(
-        f"{s:<28} "
+        f"{name:<28} "
         f"{m['final_bankroll']:>8.2f}u "
+        f"{m['profit']:>+7.2f}u "
         f"{m['roi']:>6.1f}% "
         f"{m['max_drawdown_units']:>6.2f}u "
-        f"{m['longest_losing_streak']:>5} "
-        f"{m['profit_factor']:>6.3f} "
-        f"{m['settled']:>8}"
+        f"{m['peak_bankroll']:>7.2f}u "
+        f"{m['lowest_bankroll']:>7.2f}u "
+        f"{m['longest_losing_streak']:>4} "
+        f"{m['volatility_score']:>7.4f} "
+        f"{m['settled_picks']:>6}"
     )
 
-print("=" * 85)
+print("=" * 100)
+
+# ── Comparison summary ────────────────────────────────────────────────────────
 print()
-print("Portfolio comparison:")
-print("-" * 60)
+print("Comparison summary:")
+print("-" * 50)
+cmp = sim.get("comparison", {})
+for key, val in cmp.items():
+    if val:
+        print(f"  {key:<26}: {val['strategy']} ({val['value']})")
+    else:
+        print(f"  {key:<26}: N/A")
+
+# ── Portfolio ─────────────────────────────────────────────────────────────────
+print()
+print("Portfolio PORTFOLIO_BALANCED_V1:")
+print("-" * 50)
 for p in sim["portfolios"]:
-    print(f"  Name            : {p['name']}")
     print(f"  Total bets      : {p['portfolio_total_bets']}")
     print(f"  Wins / Losses   : {p['portfolio_wins']} / {p['portfolio_losses']}")
     print(f"  Profit          : {p['portfolio_profit']:+.2f}u")
     print(f"  ROI             : {p['portfolio_roi']:+.2f}%")
     print(f"  Final bankroll  : {p['final_bankroll']:.2f}u")
+    print(f"  Peak bankroll   : {p['peak_bankroll']:.2f}u")
+    print(f"  Lowest bankroll : {p['lowest_bankroll']:.2f}u")
     print(f"  Max drawdown    : {p['max_drawdown']:.2f}u  ({p['max_drawdown_percent']:.1f}%)")
     print(f"  Longest L-streak: {p['longest_losing_streak']}")
     print(f"  Profit factor   : {p['profit_factor']:.3f}")
+    print(f"  Volatility      : {p['volatility_score']:.4f}")
     print()
 
+print()
 if all_ok:
-    print("BANKROLL_PORTFOLIO_SIMULATION_OK")
+    print("BANKROLL_SIMULATION_OK")
 else:
-    print("WARNING: some strategies returned no data")
+    print("VALIDATION FAILED — see errors above")
     sys.exit(1)
