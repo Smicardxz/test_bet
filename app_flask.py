@@ -3360,9 +3360,31 @@ def api_shadow_lab():
         today = datetime.now(timezone.utc).date().isoformat()
         today_predictions = [r for r in rows if r.get("prediction_date", "").startswith(today)]
         
+        def _battle_quality(betiq_take: bool, shadow_take: bool) -> str:
+            """Classify a battle row. Both-skip rows must be excluded before calling."""
+            if betiq_take and shadow_take:
+                return "AGREEMENT"
+            if betiq_take:
+                return "BETIQ_ONLY"
+            if shadow_take:
+                return "SHADOW_ONLY"
+            return "DIRECT_DISAGREEMENT"
+        
+        def _battle_winner(betiq_take: bool, shadow_take: bool, result: str) -> str:
+            """Assign winner for a settled battle row. Returns empty string when undecidable."""
+            if not result or result == "PENDING":
+                return ""
+            won = (result == "WON")
+            if betiq_take and shadow_take:
+                return "TIE"
+            if betiq_take:
+                return "BETIQ" if won else "SHADOW"
+            if shadow_take:
+                return "SHADOW" if won else "BETIQ"
+            return ""
+        
         today_comparison = []
         for r in today_predictions:
-            # Determine shadow decision
             shadow_decision = "SKIP"
             shadow_reason = ""
             
@@ -3373,8 +3395,15 @@ def api_shadow_lab():
                 shadow_decision = "TAKE"
                 shadow_reason = "SHADOW_MARKET_V1 criteria met"
             
-            # Determine betiq decision
             betiq_decision = "TAKE" if r.get("selection_mode") in ("LIVE_SAFE", "LIVE") else "SKIP"
+            
+            # Rule: a battle exists only when at least one side generated a pick
+            if betiq_decision == "SKIP" and shadow_decision == "SKIP":
+                continue
+            
+            b_take = betiq_decision == "TAKE"
+            s_take = shadow_decision == "TAKE"
+            result = r.get("status", "")
             
             today_comparison.append({
                 "fixture_id": r.get("fixture_id", ""),
@@ -3389,7 +3418,9 @@ def api_shadow_lab():
                 "selection_mode": r.get("selection_mode", ""),
                 "market": r.get("market", ""),
                 "bookmaker_odd": r.get("bookmaker_odd") or 0,
-                "status": r.get("status", "")
+                "status": result,
+                "battle_quality": _battle_quality(b_take, s_take),
+                "winner": _battle_winner(b_take, s_take, result),
             })
         
         # Recent settled
@@ -3397,31 +3428,43 @@ def api_shadow_lab():
         settled_rows.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         
         recent_settled = []
-        for r in settled_rows[:20]:
+        battle_counts = {"AGREEMENT": 0, "BETIQ_ONLY": 0, "SHADOW_ONLY": 0, "DIRECT_DISAGREEMENT": 0}
+        
+        for r in settled_rows:
             betiq_taken = r.get("selection_mode") in ("LIVE_SAFE", "LIVE")
-            
-            # Determine if shadow would have taken it
-            shadow_taken = (
+            shadow_taken = bool(
                 r.get("bookmaker_odd") and REAL_ODDS_THRESHOLD <= r.get("bookmaker_odd") <= 5.0
                 and r.get("market") not in ("FT_UNDER_1_5", "HT_UNDER_0_5")
                 and (r.get("ev_percentage") or 0) <= 35
                 and r.get("market") in ("HT_OVER_1_5", "HT_OVER_0_5", "FT_OVER_1_5", "FT_UNDER_2_5")
             )
             
-            profit = compute_pl(r.get("status"), r.get("bookmaker_odd")) if r.get("bookmaker_odd") else 0
+            # Rule: exclude rows where neither side generated a pick
+            if not betiq_taken and not shadow_taken:
+                continue
             
-            recent_settled.append({
-                "prediction_id": r.get("id", ""),
-                "date": r.get("created_at", ""),
-                "home_team": r.get("home_team", ""),
-                "away_team": r.get("away_team", ""),
-                "market": r.get("market", ""),
-                "odd": r.get("bookmaker_odd") or 0,
-                "result": r.get("status", ""),
-                "betiq_taken": betiq_taken,
-                "shadow_taken": shadow_taken,
-                "profit": round(profit, 2)
-            })
+            quality = _battle_quality(betiq_taken, shadow_taken)
+            result  = r.get("status", "")
+            winner  = _battle_winner(betiq_taken, shadow_taken, result)
+            profit  = compute_pl(result, r.get("bookmaker_odd")) if r.get("bookmaker_odd") else 0
+            
+            battle_counts[quality] = battle_counts.get(quality, 0) + 1
+            
+            if len(recent_settled) < 20:
+                recent_settled.append({
+                    "prediction_id": r.get("id", ""),
+                    "date": r.get("created_at", ""),
+                    "home_team": r.get("home_team", ""),
+                    "away_team": r.get("away_team", ""),
+                    "market": r.get("market", ""),
+                    "odd": r.get("bookmaker_odd") or 0,
+                    "result": result,
+                    "betiq_taken": betiq_taken,
+                    "shadow_taken": shadow_taken,
+                    "battle_quality": quality,
+                    "winner": winner,
+                    "profit": round(profit, 2),
+                })
         
         # MISSED_SHADOW_OPPORTUNITIES
         # Evaluate markets not currently generated by BetIQ using pending predictions with profile data
@@ -3637,6 +3680,7 @@ def api_shadow_lab():
             "missed_shadow_opportunities": missed_shadow_opportunities,
             "today_comparison": today_comparison,
             "recent_settled": recent_settled,
+            "battle_counts": battle_counts,
             
             # Shadow portfolio - simulated picks with ROI participation
             "shadow_portfolio": shadow_predictions,
