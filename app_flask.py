@@ -2616,62 +2616,46 @@ def api_shadow_lab():
         # Get TRACKING_RESET_AT
         reset_at = os.environ.get("TRACKING_RESET_AT", "").strip()
         
-        # Fetch POST_RESET predictions
+        # Fetch POST_RESET predictions with pagination (Supabase server max=1000/page)
+        _PRED_COLS = (
+            "id, market, status, selection_mode, bookmaker_odd, "
+            "ev_percentage, created_at, prediction_date, "
+            "home_team, away_team, league, fixture_id, "
+            "offensive_profile, defensive_profile, market_generation_stats, "
+            "recommended_market_direction, best_over_market, best_under_market, "
+            "market_regime, confidence_score, volatility_score, chaos_score, "
+            "event_context, country, kickoff_time"
+        )
         if reset_at:
-            if "T" in reset_at:
-                q = _repo._client.table("predictions").select(
-                    "id, market, status, selection_mode, bookmaker_odd, "
-                    "ev_percentage, created_at, prediction_date, "
-                    "home_team, away_team, league, fixture_id, "
-                    "offensive_profile, defensive_profile, market_generation_stats, "
-                    "recommended_market_direction, best_over_market, best_under_market, "
-                    "market_regime, confidence_score, volatility_score, chaos_score, "
-                    "event_context, country, kickoff_time"
-                ).gte("created_at", reset_at).limit(10000)
-            else:
-                q = _repo._client.table("predictions").select(
-                    "id, market, status, selection_mode, bookmaker_odd, "
-                    "ev_percentage, created_at, prediction_date, "
-                    "home_team, away_team, league, fixture_id, "
-                    "offensive_profile, defensive_profile, market_generation_stats, "
-                    "recommended_market_direction, best_over_market, best_under_market, "
-                    "market_regime, confidence_score, volatility_score, chaos_score, "
-                    "event_context, country, kickoff_time"
-                ).gte("prediction_date", reset_at).limit(10000)
+            _filter_col = "created_at" if "T" in reset_at else "prediction_date"
+            _filter_val = reset_at
         else:
             from datetime import date, timedelta
-            cutoff = (date.today() - timedelta(days=30)).isoformat()
-            q = _repo._client.table("predictions").select(
-                "id, market, status, selection_mode, bookmaker_odd, "
-                "ev_percentage, created_at, prediction_date, "
-                "home_team, away_team, league, fixture_id, "
-                "offensive_profile, defensive_profile, market_generation_stats, "
-                "recommended_market_direction, best_over_market, best_under_market, "
-                "market_regime, confidence_score, volatility_score, chaos_score, "
-                "event_context, country, kickoff_time"
-            ).gte("prediction_date", cutoff).limit(10000)
+            _filter_col = "prediction_date"
+            _filter_val = (date.today() - timedelta(days=30)).isoformat()
         
-        rows = q.execute().data or []
+        rows = []
+        _page = 0
+        _page_size = 1000
+        while True:
+            _batch = _repo._client.table("predictions").select(_PRED_COLS).gte(
+                _filter_col, _filter_val
+            ).range(_page * _page_size, (_page + 1) * _page_size - 1).execute().data or []
+            rows.extend(_batch)
+            if len(_batch) < _page_size:
+                break
+            _page += 1
         
-        # Fetch fixtures for score data (include actual scores for backtesting)
+        # Fetch fixtures targeted by fixture_ids in predictions (bypasses Supabase 1000-row server limit)
         try:
-            if reset_at:
-                if "T" in reset_at:
-                    fq = _repo._client.table("fixtures").select(
-                        "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                    ).gte("created_at", reset_at).limit(10000)
-                else:
-                    fq = _repo._client.table("fixtures").select(
-                        "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                    ).gte("kickoff_time", reset_at).limit(10000)
-            else:
-                from datetime import date, timedelta
-                cutoff = (date.today() - timedelta(days=30)).isoformat()
-                fq = _repo._client.table("fixtures").select(
+            needed_ids = list({r["fixture_id"] for r in rows if r.get("fixture_id")})
+            fixtures = []
+            for _i in range(0, len(needed_ids), 200):
+                _batch = needed_ids[_i:_i + 200]
+                _res = _repo._client.table("fixtures").select(
                     "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                ).gte("kickoff_time", cutoff).limit(10000)
-            
-            fixtures = fq.execute().data or []
+                ).in_("fixture_id", _batch).execute().data or []
+                fixtures.extend(_res)
         except Exception:
             fixtures = []
         
