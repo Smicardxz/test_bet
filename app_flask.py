@@ -2627,7 +2627,7 @@ def api_shadow_lab():
                     "recommended_market_direction, best_over_market, best_under_market, "
                     "market_regime, confidence_score, volatility_score, chaos_score, "
                     "event_context, country, kickoff_time"
-                ).gte("created_at", reset_at)
+                ).gte("created_at", reset_at).limit(10000)
             else:
                 q = _repo._client.table("predictions").select(
                     "id, market, status, selection_mode, bookmaker_odd, "
@@ -2637,7 +2637,7 @@ def api_shadow_lab():
                     "recommended_market_direction, best_over_market, best_under_market, "
                     "market_regime, confidence_score, volatility_score, chaos_score, "
                     "event_context, country, kickoff_time"
-                ).gte("prediction_date", reset_at)
+                ).gte("prediction_date", reset_at).limit(10000)
         else:
             from datetime import date, timedelta
             cutoff = (date.today() - timedelta(days=30)).isoformat()
@@ -2649,7 +2649,7 @@ def api_shadow_lab():
                 "recommended_market_direction, best_over_market, best_under_market, "
                 "market_regime, confidence_score, volatility_score, chaos_score, "
                 "event_context, country, kickoff_time"
-            ).gte("prediction_date", cutoff)
+            ).gte("prediction_date", cutoff).limit(10000)
         
         rows = q.execute().data or []
         
@@ -2659,17 +2659,17 @@ def api_shadow_lab():
                 if "T" in reset_at:
                     fq = _repo._client.table("fixtures").select(
                         "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                    ).gte("created_at", reset_at)
+                    ).gte("created_at", reset_at).limit(10000)
                 else:
                     fq = _repo._client.table("fixtures").select(
                         "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                    ).gte("kickoff_time", reset_at)
+                    ).gte("kickoff_time", reset_at).limit(10000)
             else:
                 from datetime import date, timedelta
                 cutoff = (date.today() - timedelta(days=30)).isoformat()
                 fq = _repo._client.table("fixtures").select(
                     "id, fixture_id, home_team, away_team, home_score, away_score, ht_home_score, ht_away_score, kickoff_time, status"
-                ).gte("kickoff_time", cutoff)
+                ).gte("kickoff_time", cutoff).limit(10000)
             
             fixtures = fq.execute().data or []
         except Exception:
