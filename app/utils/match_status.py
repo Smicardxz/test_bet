@@ -21,23 +21,26 @@ class MatchStatusHelper:
     
     # API-Football status codes
     UPCOMING_STATUSES = {
-        "TBD",  # Time to be defined
-        "NS",   # Not started
-        "SUSP", # Suspended (upcoming)
-        "PST",  # Postponed
-        "CANC", # Cancelled
-        "ABD",  # Abandoned (before start)
+        "TBD",        # Time to be defined
+        "NS",         # Not started
+        "SCHEDULED",  # API-Football scheduled (= NS equivalent)
+        "SUSP",       # Suspended (upcoming)
+        "PST",        # Postponed
+        "CANC",       # Cancelled
+        "ABD",        # Abandoned (before start)
     }
     
     LIVE_STATUSES = {
-        "1H",   # First half
-        "HT",   # Halftime
-        "2H",   # Second half
-        "ET",   # Extra time
-        "BT",   # Break time (extra time)
-        "P",    # Penalty shootout
-        "LIVE", # Generic live
-        "INT",  # Interrupted
+        "1H",      # First half
+        "HT",      # Halftime
+        "2H",      # Second half
+        "ET",      # Extra time
+        "BT",      # Break time (extra time)
+        "P",       # Penalty shootout
+        "LIVE",    # Generic live
+        "IN_PLAY", # API-Football live
+        "PAUSED",  # Paused
+        "INT",     # Interrupted
     }
     
     FINISHED_STATUSES = {

@@ -5,7 +5,7 @@ Analyze and profile leagues for anomaly detection performance
 Identifies the best obscure leagues to scan in priority
 """
 
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
 import statistics
@@ -59,6 +59,14 @@ class LeagueProfile:
     line_breach_frequency: float = 0.0  # How often lines breached
     extreme_under_rate: float = 0.0    # Under extreme lines
     
+    # Scoring dynamics (STEP 1)
+    second_half_goals_rate: float = 50.0  # % goals in 2nd half
+    comeback_frequency: float = 0.0       # % matches with strong 2H comeback
+    late_goal_frequency: float = 0.0      # % matches with more goals in 2H than 1H
+    red_card_frequency: float = 0.0       # Red cards per match (if available)
+    volatility_score: float = 0.0         # 0-100: how unpredictable is this league
+    reliability_score: float = 0.0        # 0-100: inverse of volatility
+
     # Bookmaker
     avg_bookmaker_margin: float = 0.0
     avg_discrepancy: float = 0.0       # Average gap bookmaker/model
@@ -295,10 +303,11 @@ class LeagueProfileEngine:
             return LeagueCategory.BALANCED
     
     def _generate_tags(self, profile: LeagueProfile) -> List[str]:
-        """Generate descriptive tags for league"""
-        
+        """Generate descriptive tags for league (STEP 1 enhanced)"""
+
         tags = []
-        
+
+        # --- Original tags ---
         if profile.under_2_5_rate > 70:
             tags.append("VERY_UNDER")
         if profile.under_1_5_rate > 50:
@@ -317,8 +326,160 @@ class LeagueProfileEngine:
             tags.append("OBSCURE")
         if profile.extreme_under_rate > 90:
             tags.append("EXTREME_UNDER")
-        
+
+        # --- STEP 1: Intelligence tags ---
+        if profile.avg_goals_per_match < 2.2 and "LOW_SCORING" not in tags:
+            tags.append("LOW_SCORING_LEAGUE")
+        if profile.goals_variance > 2.5:
+            tags.append("HIGH_VOLATILITY_LEAGUE")
+        if profile.avg_ht_goals < 0.75 and profile.ht_00_rate > 45:
+            tags.append("HT_UNDER_FRIENDLY")
+        if profile.btts_rate > 55:
+            tags.append("BTTS_FRIENDLY")
+        if profile.goals_variance > 3.0 and profile.avg_goals_per_match > 2.3:
+            tags.append("CHAOTIC_LEAGUE")
+        if profile.stability_score > 60 and profile.under_2_5_rate > 55:
+            tags.append("STABLE_UNDER_LEAGUE")
+        if profile.late_goal_frequency > 58:
+            tags.append("LATE_GOAL_LEAGUE")
+        if profile.volatility_score > 65:
+            tags.append("YOUTH_CHAOS")   # Heuristic: high volatility leagues often = youth/amateur
+        if profile.goals_variance > 3.5 and profile.btts_rate > 55:
+            tags.append("WOMEN_HIGH_VARIANCE")  # Heuristic based on scoring pattern
+
         return tags
+
+    def compute_from_match_context(
+        self,
+        ft_goals: List[int],
+        ht_goals: Optional[List[int]] = None,
+        match_history: Optional[List[Dict]] = None,
+        league_name: str = "CONTEXT",
+    ) -> LeagueProfile:
+        """
+        Construit un profil de ligue depuis le contexte disponible pour un match.
+        Utilisé quand on n'a pas de base de données de ligue mais seulement
+        l'historique des deux équipes.
+
+        Args:
+            ft_goals:      Historique buts FT combiné
+            ht_goals:      Historique buts HT
+            match_history: Dicts avec home_goals/away_goals
+            league_name:   Nom de la ligue (optionnel)
+
+        Returns:
+            LeagueProfile (pseudo-profil de contexte)
+        """
+        profile = LeagueProfile(league_name=league_name)
+        n = len(ft_goals)
+        if n < 3:
+            return profile
+
+        profile.total_matches_analyzed = n
+        mean = sum(ft_goals) / n
+        profile.avg_goals_per_match = mean
+        profile.under_2_5_rate = sum(1 for g in ft_goals if g < 2.5) / n * 100
+        profile.under_1_5_rate = sum(1 for g in ft_goals if g < 1.5) / n * 100
+        profile.over_2_5_rate = 100.0 - profile.under_2_5_rate
+
+        if n > 1:
+            profile.goals_variance = sum((g - mean) ** 2 for g in ft_goals) / n
+            profile.line_breach_frequency = profile.over_2_5_rate
+
+        if ht_goals and len(ht_goals) >= 3:
+            nh = min(len(ht_goals), n)
+            profile.avg_ht_goals = sum(ht_goals[:nh]) / nh
+            ht_zeros = sum(1 for g in ht_goals[:nh] if g == 0)
+            profile.ht_00_rate = ht_zeros / nh * 100
+            profile.ht_low_scoring = profile.ht_00_rate > 50
+
+            sh_goals = [ft_goals[i] - ht_goals[i] for i in range(nh)]
+            total_1h = sum(ht_goals[:nh])
+            total_2h = sum(sh_goals)
+            total_all = total_1h + total_2h
+            profile.second_half_goals_rate = (total_2h / total_all * 100) if total_all > 0 else 50.0
+            profile.late_goal_frequency = (
+                sum(1 for i in range(nh) if sh_goals[i] > ht_goals[i]) / nh * 100
+            )
+
+        if match_history and len(match_history) >= 3:
+            nm = len(match_history)
+            btts = sum(
+                1 for m in match_history
+                if m.get("home_goals", 0) > 0 and m.get("away_goals", 0) > 0
+            )
+            profile.btts_rate = btts / nm * 100
+
+            if ht_goals and len(ht_goals) >= 3:
+                nh2 = min(len(match_history), len(ht_goals), n)
+                comebacks = sum(
+                    1 for i in range(nh2)
+                    if (ft_goals[i] - ht_goals[i]) >= ht_goals[i] + 2
+                )
+                profile.comeback_frequency = comebacks / nh2 * 100
+
+        # Computed composite scores
+        profile.volatility_score = min(
+            100.0, profile.goals_variance * 18 + max(ft_goals) * 2.5
+        )
+        profile.stability_score = max(0.0, 100.0 - (profile.goals_variance / 5.0) * 100)
+        profile.reliability_score = max(0.0, 100.0 - profile.volatility_score * 0.70)
+        profile.exploitability_score = self._calculate_exploitability(profile)
+        profile.category = self._categorize_league(profile)
+        profile.tags = self._generate_tags(profile)
+
+        return profile
+
+    def adjust_confidence_for_profile(
+        self, base_confidence: float, profile: LeagueProfile
+    ) -> Tuple[float, List[str]]:
+        """
+        Ajuste le score de confiance en fonction du profil de ligue/contexte.
+
+        Args:
+            base_confidence: Score de confiance initial (0-100)
+            profile:         LeagueProfile calculé
+
+        Returns:
+            (adjusted_confidence, list_of_reasons)
+        """
+        adjusted = base_confidence
+        reasons: List[str] = []
+
+        # Ligue volatile → under moins fiable
+        if profile.volatility_score > 70:
+            adjusted *= 0.78
+            reasons.append(f"HIGH_VOLATILITY ({profile.volatility_score:.0f}/100) -22%")
+        elif profile.volatility_score > 50:
+            adjusted *= 0.88
+            reasons.append(f"MEDIUM_VOLATILITY ({profile.volatility_score:.0f}/100) -12%")
+
+        # BTTS élevé = under 2.5 moins fiable
+        if "BTTS_FRIENDLY" in profile.tags:
+            adjusted *= 0.88
+            reasons.append("BTTS_FRIENDLY league -12% under confidence")
+
+        # Ligue chaotique
+        if "CHAOTIC_LEAGUE" in profile.tags:
+            adjusted *= 0.80
+            reasons.append("CHAOTIC_LEAGUE -20%")
+
+        # Buts tardifs = HT under moins fiable
+        if "LATE_GOAL_LEAGUE" in profile.tags:
+            adjusted *= 0.92
+            reasons.append("LATE_GOAL_LEAGUE -8% HT confidence")
+
+        # Ligue stable under → bonus de confiance
+        if "STABLE_UNDER_LEAGUE" in profile.tags:
+            adjusted = min(100.0, adjusted * 1.08)
+            reasons.append("STABLE_UNDER_LEAGUE +8% under confidence")
+
+        # HT friendly → bonus HT under
+        if "HT_UNDER_FRIENDLY" in profile.tags:
+            adjusted = min(100.0, adjusted * 1.05)
+            reasons.append("HT_UNDER_FRIENDLY +5% HT confidence")
+
+        return min(100.0, max(0.0, adjusted)), reasons
     
     def _create_ranking(self, profiles: List[LeagueProfile]) -> LeagueRanking:
         """Create league rankings"""

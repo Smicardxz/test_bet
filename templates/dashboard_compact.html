@@ -480,7 +480,7 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('match-scanner').style.display = 'none';
             
-            fetch('/api/data')
+            fetch('/api/data', {headers: {'ngrok-skip-browser-warning': 'true'}})
                 .then(res => res.json())
                 .then(data => {
                     allData = data;
@@ -1009,7 +1009,8 @@
             fetch('/api/analyze_match', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
                 },
                 body: JSON.stringify(requestData)
             })

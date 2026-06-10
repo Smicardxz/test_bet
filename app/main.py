@@ -5,11 +5,6 @@ Simple local-only API for detecting bookmaker anomalies in obscure football leag
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.session import engine
-from app.db.base import Base
-
-# Create database tables
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Local Football Anomaly Scanner",

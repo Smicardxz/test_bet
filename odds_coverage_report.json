@@ -1,0 +1,859 @@
+{
+  "generated_at": "2026-06-01T08:20:59.677498+00:00",
+  "odds_api_base": "https://api.the-odds-api.com/v4",
+  "key_present": true,
+  "api_status": {
+    "key_present": true,
+    "key_length": 32,
+    "quota_remaining": 496,
+    "error": null,
+    "quota_remaining_after_fetch": 492
+  },
+  "soccer_sports": {
+    "total_soccer_sports": 8,
+    "active_soccer_sports": 8,
+    "in_our_mapping": [
+      "soccer_japan_j_league",
+      "soccer_norway_eliteserien"
+    ],
+    "not_in_our_mapping": [
+      {
+        "key": "soccer_brazil_serie_b",
+        "title": "Brazil Série B"
+      },
+      {
+        "key": "soccer_chile_campeonato",
+        "title": "Primera División - Chile"
+      },
+      {
+        "key": "soccer_conmebol_copa_libertadores",
+        "title": "Copa Libertadores"
+      },
+      {
+        "key": "soccer_conmebol_copa_sudamericana",
+        "title": "Copa Sudamericana"
+      },
+      {
+        "key": "soccer_fifa_world_cup",
+        "title": "FIFA World Cup"
+      },
+      {
+        "key": "soccer_fifa_world_cup_winner",
+        "title": "FIFA World Cup Winner"
+      }
+    ],
+    "all_soccer_sports": [
+      {
+        "key": "soccer_brazil_serie_b",
+        "title": "Brazil Série B",
+        "active": true
+      },
+      {
+        "key": "soccer_chile_campeonato",
+        "title": "Primera División - Chile",
+        "active": true
+      },
+      {
+        "key": "soccer_conmebol_copa_libertadores",
+        "title": "Copa Libertadores",
+        "active": true
+      },
+      {
+        "key": "soccer_conmebol_copa_sudamericana",
+        "title": "Copa Sudamericana",
+        "active": true
+      },
+      {
+        "key": "soccer_fifa_world_cup",
+        "title": "FIFA World Cup",
+        "active": true
+      },
+      {
+        "key": "soccer_fifa_world_cup_winner",
+        "title": "FIFA World Cup Winner",
+        "active": true
+      },
+      {
+        "key": "soccer_japan_j_league",
+        "title": "J League",
+        "active": true
+      },
+      {
+        "key": "soccer_norway_eliteserien",
+        "title": "Eliteserien - Norway",
+        "active": true
+      }
+    ]
+  },
+  "events_fetch": {
+    "total_events": 11,
+    "sport_keys_with_data": 2,
+    "quota_used_this_run": 21,
+    "quota_remaining_after": 492,
+    "by_sport": [
+      {
+        "sport_key": "soccer_epl",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_spain_la_liga",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_germany_bundesliga",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_france_ligue1",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_italy_serie_a",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_netherlands_eredivisie",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_portugal_primeira_liga",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_turkey_super_league",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_belgium_first_div",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_england_efl_champ",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_scotland_premiership",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_brazil_campeonato",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_argentina_primera_division",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_usa_mls",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_mexico_ligamx",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_denmark_superliga",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_norway_eliteserien",
+        "events": 1,
+        "status": "OK"
+      },
+      {
+        "sport_key": "soccer_sweden_allsvenskan",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_poland_ekstraklasa",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_greece_super_league",
+        "events": 0,
+        "status": "EMPTY_OR_ERROR"
+      },
+      {
+        "sport_key": "soccer_japan_j_league",
+        "events": 10,
+        "status": "OK"
+      }
+    ]
+  },
+  "bookmakers_markets": {
+    "bookmakers": [
+      "888sport",
+      "Betsson",
+      "LeoVegas (SE)",
+      "Marathon Bet",
+      "Nordic Bet",
+      "PMU (FR)",
+      "Pinnacle",
+      "Unibet (FR)",
+      "Unibet (NL)",
+      "Unibet (SE)",
+      "William Hill",
+      "Winamax (DE)",
+      "Winamax (FR)"
+    ],
+    "markets": [
+      "h2h",
+      "totals"
+    ],
+    "totals_lines": [
+      2.0,
+      2.25,
+      2.5,
+      2.75,
+      3.5
+    ]
+  },
+  "scanned_matches_count": 35,
+  "league_coverage": {
+    "total_unique_leagues": 16,
+    "covered_count": 2,
+    "not_in_mapping_count": 12,
+    "key_resolved_no_events_count": 2,
+    "leagues": [
+      {
+        "league": "3. Division - Girone 5",
+        "country": "Norway",
+        "sport_key": "soccer_norway_eliteserien",
+        "has_events": true,
+        "match_count": 1,
+        "coverage_status": "COVERED"
+      },
+      {
+        "league": "ASEAN Championship U19",
+        "country": "World",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Division di Honor",
+        "country": "Aruba",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Friendlies",
+        "country": "World",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "J2/J3 League",
+        "country": "Japan",
+        "sport_key": "soccer_japan_j_league",
+        "has_events": true,
+        "match_count": 1,
+        "coverage_status": "COVERED"
+      },
+      {
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 6,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Premier Soccer League",
+        "country": "Zimbabwe",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Première Division",
+        "country": "Mali",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 2,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Primera División",
+        "country": "Chile",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Segunda División",
+        "country": "Uruguay",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Super League",
+        "country": "Kenya",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 10,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "Tournoi Maurice Revello",
+        "country": "World",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "UEFA U17 Championship",
+        "country": "World",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 2,
+        "coverage_status": "NOT_IN_MAPPING"
+      },
+      {
+        "league": "USL League Two",
+        "country": "USA",
+        "sport_key": "soccer_usa_mls",
+        "has_events": false,
+        "match_count": 3,
+        "coverage_status": "KEY_RESOLVED_NO_EVENTS"
+      },
+      {
+        "league": "USL W League",
+        "country": "USA",
+        "sport_key": "soccer_usa_mls",
+        "has_events": false,
+        "match_count": 1,
+        "coverage_status": "KEY_RESOLVED_NO_EVENTS"
+      },
+      {
+        "league": "Victoria NPL 2",
+        "country": "Australia",
+        "sport_key": null,
+        "has_events": false,
+        "match_count": 2,
+        "coverage_status": "NOT_IN_MAPPING"
+      }
+    ]
+  },
+  "team_mapping": {
+    "total_attempts": 35,
+    "success": 0,
+    "uncertain": 0,
+    "failed": 2,
+    "no_league_coverage": 33,
+    "attempts": [
+      {
+        "match": "Tromsø II vs Strømsgodset II",
+        "league": "3. Division - Girone 5",
+        "country": "Norway",
+        "home_api": "Tromsø II",
+        "away_api": "Strømsgodset II",
+        "sport_key": "soccer_norway_eliteserien",
+        "best_score": 0.294,
+        "home_score": 0.421,
+        "away_score": 0.167,
+        "home_odds_api": "Lillestrom",
+        "away_odds_api": "Viking FK",
+        "commence_time": "2026-07-22T17:00:00Z",
+        "status": "FAILED",
+        "failure_reason": "NO_MATCH_FOUND",
+        "failure_detail": "Aucun événement The Odds API ne correspond à 'Tromsø II' vs 'Strømsgodset II'. Meilleur score: 0.29. Meilleure correspondance: 'Lillestrom vs Viking FK'"
+      },
+      {
+        "match": "3K vs Talanta",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "3K",
+        "away_api": "Talanta",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Vietnam U19 vs Timor-Leste U19",
+        "league": "ASEAN Championship U19",
+        "country": "World",
+        "home_api": "Vietnam U19",
+        "away_api": "Timor-Leste U19",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'ASEAN Championship U19' (World) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "UCSA vs Nyva Ternopil",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "UCSA",
+        "away_api": "Nyva Ternopil",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Gucha Stars vs Darajani Gogo",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Gucha Stars",
+        "away_api": "Darajani Gogo",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "France U17 vs Montenegro U17",
+        "league": "UEFA U17 Championship",
+        "country": "World",
+        "home_api": "France U17",
+        "away_api": "Montenegro U17",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'UEFA U17 Championship' (World) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Melbourne Victory II vs Melbourne Knights",
+        "league": "Victoria NPL 2",
+        "country": "Australia",
+        "home_api": "Melbourne Victory II",
+        "away_api": "Melbourne Knights",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Victoria NPL 2' (Australia) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Kisumu All Stars vs Migori Youth",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Kisumu All Stars",
+        "away_api": "Migori Youth",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Naivas vs Vihiga United FC",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Naivas",
+        "away_api": "Vihiga United FC",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "MCF vs Mwatate United",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "MCF",
+        "away_api": "Mwatate United",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Vanraure Hachinohe vs Fukushima United",
+        "league": "J2/J3 League",
+        "country": "Japan",
+        "home_api": "Vanraure Hachinohe",
+        "away_api": "Fukushima United",
+        "sport_key": "soccer_japan_j_league",
+        "best_score": 0.365,
+        "home_score": 0.278,
+        "away_score": 0.452,
+        "home_odds_api": "Yokohama F Marinos",
+        "away_odds_api": "Shimizu S Pulse",
+        "commence_time": "2026-06-06T08:00:00Z",
+        "status": "FAILED",
+        "failure_reason": "NO_MATCH_FOUND",
+        "failure_detail": "Aucun événement The Odds API ne correspond à 'Vanraure Hachinohe' vs 'Fukushima United'. Meilleur score: 0.36. Meilleure correspondance: 'Yokohama F Marinos vs Shimizu S Pulse'"
+      },
+      {
+        "match": "Nzoia Sugar vs Fortune Sacco",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Nzoia Sugar",
+        "away_api": "Fortune Sacco",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Japan U20 vs Côte d'Ivoire U20",
+        "league": "Tournoi Maurice Revello",
+        "country": "World",
+        "home_api": "Japan U20",
+        "away_api": "Côte d'Ivoire U20",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Tournoi Maurice Revello' (World) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Equity Bank vs Soy United",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Equity Bank",
+        "away_api": "Soy United",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Ahrobiznes Volochysk vs Chernihiv",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "Ahrobiznes Volochysk",
+        "away_api": "Chernihiv",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "MOFA vs Kibera Black Stars",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "MOFA",
+        "away_api": "Kibera Black Stars",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Bulawayo Chiefs vs Manica Diamonds",
+        "league": "Premier Soccer League",
+        "country": "Zimbabwe",
+        "home_api": "Bulawayo Chiefs",
+        "away_api": "Manica Diamonds",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Premier Soccer League' (Zimbabwe) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Denmark U17 vs Italy U17",
+        "league": "UEFA U17 Championship",
+        "country": "World",
+        "home_api": "Denmark U17",
+        "away_api": "Italy U17",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'UEFA U17 Championship' (World) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Nairobi City Stars vs Kabati Youth FC",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Nairobi City Stars",
+        "away_api": "Kabati Youth FC",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Chornomorets vs Metal Kharkiv",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "Chornomorets",
+        "away_api": "Metal Kharkiv",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Probiy Horodenka vs Prykarpattia",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "Probiy Horodenka",
+        "away_api": "Prykarpattia",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Bulleen Lions vs Port Melbourne",
+        "league": "Victoria NPL 2",
+        "country": "Australia",
+        "home_api": "Bulleen Lions",
+        "away_api": "Port Melbourne",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Victoria NPL 2' (Australia) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Inhulets vs Livyi Bereh",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "Inhulets",
+        "away_api": "Livyi Bereh",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Luanda Villa vs Mombasa Elite",
+        "league": "Super League",
+        "country": "Kenya",
+        "home_api": "Luanda Villa",
+        "away_api": "Mombasa Elite",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Super League' (Kenya) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Yarud Mariupol' vs Viktoriya Mykolaivka",
+        "league": "Persha Liga",
+        "country": "Ukraine",
+        "home_api": "Yarud Mariupol'",
+        "away_api": "Viktoriya Mykolaivka",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Persha Liga' (Ukraine) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Palestino vs A. Italiano",
+        "league": "Primera División",
+        "country": "Chile",
+        "home_api": "Palestino",
+        "away_api": "A. Italiano",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Primera División' (Chile) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Oly Town vs Ballard",
+        "league": "USL League Two",
+        "country": "USA",
+        "home_api": "Oly Town",
+        "away_api": "Ballard",
+        "sport_key": "soccer_usa_mls",
+        "failure_reason": "NO_EVENTS_FOR_SPORT",
+        "failure_detail": "sport_key 'soccer_usa_mls' résolu mais 0 événements récupérés de The Odds API",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "RKC vs Rockford Raptors",
+        "league": "USL League Two",
+        "country": "USA",
+        "home_api": "RKC",
+        "away_api": "Rockford Raptors",
+        "sport_key": "soccer_usa_mls",
+        "failure_reason": "NO_EVENTS_FOR_SPORT",
+        "failure_detail": "sport_key 'soccer_usa_mls' résolu mais 0 événements récupérés de The Odds API",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Caravel vs Nacional",
+        "league": "Division di Honor",
+        "country": "Aruba",
+        "home_api": "Caravel",
+        "away_api": "Nacional",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Division di Honor' (Aruba) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Oriental vs Tacuarembo",
+        "league": "Segunda División",
+        "country": "Uruguay",
+        "home_api": "Oriental",
+        "away_api": "Tacuarembo",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Segunda División' (Uruguay) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Albion Colorado vs Flatirons Rush",
+        "league": "USL League Two",
+        "country": "USA",
+        "home_api": "Albion Colorado",
+        "away_api": "Flatirons Rush",
+        "sport_key": "soccer_usa_mls",
+        "failure_reason": "NO_EVENTS_FOR_SPORT",
+        "failure_detail": "sport_key 'soccer_usa_mls' résolu mais 0 événements récupérés de The Odds API",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "OC Sporting W vs Los Angeles SC W",
+        "league": "USL W League",
+        "country": "USA",
+        "home_api": "OC Sporting W",
+        "away_api": "Los Angeles SC W",
+        "sport_key": "soccer_usa_mls",
+        "failure_reason": "NO_EVENTS_FOR_SPORT",
+        "failure_detail": "sport_key 'soccer_usa_mls' résolu mais 0 événements récupérés de The Odds API",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Tajikistan vs Palestine",
+        "league": "Friendlies",
+        "country": "World",
+        "home_api": "Tajikistan",
+        "away_api": "Palestine",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Friendlies' (World) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "Binga vs US Bougouba",
+        "league": "Première Division",
+        "country": "Mali",
+        "home_api": "Binga",
+        "away_api": "US Bougouba",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Première Division' (Mali) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "match": "ASKO vs Derby Academie",
+        "league": "Première Division",
+        "country": "Mali",
+        "home_api": "ASKO",
+        "away_api": "Derby Academie",
+        "sport_key": null,
+        "failure_reason": "NO_SPORT_KEY",
+        "failure_detail": "Ligue 'Première Division' (Mali) absente de COUNTRY_TO_SPORT_KEY et LEAGUE_TO_SPORT_KEY",
+        "best_odds_match": null,
+        "best_score": 0.0,
+        "status": "FAILED"
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "issue": "12 ligues scannées absentes du mapping COUNTRY_TO_SPORT_KEY / LEAGUE_TO_SPORT_KEY",
+      "top_missing": [
+        "Super League (Kenya)",
+        "Persha Liga (Ukraine)",
+        "Première Division (Mali)",
+        "UEFA U17 Championship (World)",
+        "Victoria NPL 2 (Australia)"
+      ],
+      "action": "Ajouter ces pays/ligues dans COUNTRY_TO_SPORT_KEY ou LEAGUE_TO_SPORT_KEY dans external_odds_provider.py SI elles existent dans The Odds API."
+    },
+    {
+      "priority": "INFO",
+      "issue": "Ligues mineures/jeunes/féminines scannées mais non couvertes par The Odds API",
+      "detail": "C'est NORMAL: The Odds API couvre principalement les top leagues européennes + MLS/Brésil/Argentine. Kenya Super League, U17-19-20, Women's leagues = pas disponibles dans The Odds API. ev_tier=WAITING_FOR_ODDS est correct pour ces ligues — ce n'est PAS un bug.",
+      "action": "Pour ces ligues, statistical_tier reste valide pour l'évaluation du modèle. Pour l'EV: considérer d'autres sources d'odds (Betfair, Pinnacle) pour ces marchés de niche."
+    }
+  ],
+  "conclusion": "COVERAGE_GAP DOMINANT: 2/16 ligues couvertes (12%), mais 33/35 matchs (94%) sont dans des ligues sans coverage The Odds API. Matchés: 0/2 matchs dans les ligues couvertes. Cause principale: ligues scannées majoritairement hors périmètre The Odds API."
+}

@@ -70,6 +70,11 @@ class MatchDetails(BaseModel):
     score_fulltime: Optional[MatchScore] = None
     score_halftime: Optional[MatchScore] = None
     
+    # Live match details
+    elapsed: Optional[int] = None  # Minute elapsed
+    status_short: Optional[str] = None  # Status short code (1H, 2H, etc.)
+    status_long: Optional[str] = None  # Status long description
+    
     # Venue
     venue: Optional[str] = None
     

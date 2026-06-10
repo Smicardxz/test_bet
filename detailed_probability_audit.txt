@@ -1,0 +1,20 @@
+DETAILED PROBABILITY AUDIT RESULTS
+==================================================
+
+4167% vs 41.7% Issue Investigation
+----------------------------------------
+Expected: 1/2.40 = 0.4167 = 41.7%
+Actual: 4167% (indicates double multiplication)
+
+CONFIRMED: Double multiplication found
+File: .\probability_scale_audit.py
+Line: 3
+Code: probability_scale_audit.py
+
+All Probability Calculation Findings:
+----------------------------------------
+File: .\probability_scale_audit.py
+Line: 3
+Pattern: double_multiply_100
+Code: probability_scale_audit.py
+------------------------------

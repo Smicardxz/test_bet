@@ -728,7 +728,7 @@
                     </div>
                 `;
                 
-                const response = await fetch('/api/data');
+                const response = await fetch('/api/data', {headers: {'ngrok-skip-browser-warning': 'true'}});
                 const data = await response.json();
                 
                 console.log('[DATA] Loaded successfully, matches:', 
@@ -1096,7 +1096,7 @@
             try {
                 const response = await fetch('/api/analyze_match', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
                     body: JSON.stringify({
                         fixture_id: match.match_id,
                         home_team_id: match.home_team_id,

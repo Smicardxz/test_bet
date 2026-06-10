@@ -28,6 +28,23 @@ from app.services.analysis.priority_ranking_engine import (
     RiskLevel
 )
 from app.services.analysis.match_analysis_loader import MatchAnalysisLoader
+from app.services.analysis.volatility_engine import VolatilityEngine, VolatilityResult
+from app.services.analysis.false_signal_detector import FalseSignalDetector, FalseSignalResult
+from app.services.analysis.home_away_engine import HomeAwayEngine, HomeAwayResult
+from app.services.analysis.league_specialization_engine import (
+    LeagueSpecializationEngine,
+    LeagueMarketStats,
+    LeagueMarketRanking,
+    SmartRecommendation,
+    get_engine as get_lse_engine,
+)
+from app.services.analysis.error_analysis_engine import (
+    ErrorAnalysisEngine,
+    FailureRecord,
+    FalsePositivePattern,
+    PickExplanation,
+    get_eae,
+)
 
 __all__ = [
     "HistoricalLineBreachEngine",
@@ -46,5 +63,21 @@ __all__ = [
     "PriorityAnomaly",
     "PriorityRanking",
     "RiskLevel",
-    "MatchAnalysisLoader"
+    "MatchAnalysisLoader",
+    "VolatilityEngine",
+    "VolatilityResult",
+    "FalseSignalDetector",
+    "FalseSignalResult",
+    "HomeAwayEngine",
+    "HomeAwayResult",
+    "LeagueSpecializationEngine",
+    "LeagueMarketStats",
+    "LeagueMarketRanking",
+    "SmartRecommendation",
+    "get_lse_engine",
+    "ErrorAnalysisEngine",
+    "FailureRecord",
+    "FalsePositivePattern",
+    "PickExplanation",
+    "get_eae",
 ]

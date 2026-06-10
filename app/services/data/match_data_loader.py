@@ -172,19 +172,22 @@ class MatchDataLoader:
             bundle.warnings.append(f"H2H not available: {str(e)}")
             logger.warning(f"Error loading H2H: {e}")
         
-        # 4. Load odds (optional)
+        # 4. Load odds (optimisé pour edge calculation)
         try:
-            if hasattr(self.provider, 'get_fixture_odds'):
+            if hasattr(self.provider, 'get_fixture_odds') and fixture_id:
                 odds = self.provider.get_fixture_odds(int(fixture_id))
-                if odds:
+                if odds and odds.markets:
                     bundle.odds_available = True
                     bundle.odds_markets = odds.markets
                     logger.info(f"Loaded odds with {len(odds.markets)} markets")
                 else:
+                    bundle.odds_available = False
                     bundle.warnings.append("Odds not available for this fixture")
             else:
+                bundle.odds_available = False
                 bundle.warnings.append("Provider does not support odds")
         except Exception as e:
+            bundle.odds_available = False
             bundle.warnings.append(f"Odds not available: {str(e)}")
             logger.warning(f"Error loading odds: {e}")
         

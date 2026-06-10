@@ -237,10 +237,10 @@ class EdgeDetector:
                 continue
             
             # Get historical probability
-            hit_rate = row.get("hit_rate", 0)
+            hit_rate = float(row.get("hit_rate") or 0)
             historical_prob = hit_rate / 100.0
-            fair_odd = row.get("fair_odd", 0)
-            sample_size = row.get("sample_size", len(ht_goals))
+            fair_odd = float(row.get("fair_odd") or 0)
+            sample_size = int(row.get("sample_size") or len(ht_goals))
             
             # Skip if fair odd too low (no edge possible)
             if fair_odd < self.MIN_ODD:
@@ -361,10 +361,10 @@ class EdgeDetector:
                 continue
             
             # Get historical probability
-            hit_rate = row.get("hit_rate", 0)
+            hit_rate = float(row.get("hit_rate") or 0)
             historical_prob = hit_rate / 100.0
-            fair_odd = row.get("fair_odd", 0)
-            sample_size = row.get("sample_size", len(ft_goals))
+            fair_odd = float(row.get("fair_odd") or 0)
+            sample_size = int(row.get("sample_size") or len(ft_goals))
             
             # Skip if fair odd too low
             if fair_odd < self.MIN_ODD:
@@ -465,7 +465,7 @@ class EdgeDetector:
             score = 0.0
             
             # Edge percentage (most important)
-            score += edge.edge_percent * 100  # 0-100 points
+            score += (edge.edge_percent or 0) * 100  # 0-100 points
             
             # Confidence bonus
             if edge.confidence == "HIGH":
@@ -474,14 +474,14 @@ class EdgeDetector:
                 score += 10
             
             # Sample size bonus (capped)
-            score += min(edge.sample_size / 2, 10)
+            score += min((edge.sample_size or 0) / 2, 10)
             
             # Variance penalty
             if edge.variance == "HIGH":
                 score -= 10
             
             # Fair odd bonus (prefer odds in sweet spot 1.3-2.5)
-            if 1.3 <= edge.fair_odd <= 2.5:
+            if edge.fair_odd and 1.3 <= edge.fair_odd <= 2.5:
                 score += 5
             
             return score

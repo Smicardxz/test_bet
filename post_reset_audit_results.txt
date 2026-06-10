@@ -1,0 +1,224 @@
+POST_RESET Frontend Audit Results
+==================================================
+
+Total endpoints analyzed: 20
+POST_RESET compliant: 13/20 (65.0%)
+Legacy data free: 14/20 (70.0%)
+Fixes required: 1/20 (5.0%)
+
+Detailed Results:
+--------------------------------------------------
+
+Page: BetIQ vs Market
+Endpoint: /api/performance/summary
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_summary
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: BetIQ vs Market
+Endpoint: /api/performance/by-market
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_by_market
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: BetIQ vs Market
+Endpoint: /api/performance/by-league
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_by_league
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: BetIQ vs Market
+Endpoint: /api/predictions/history
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_predictions_history
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Model Transparency
+Endpoint: /api/model/transparency
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Model Transparency
+Endpoint: /api/predictions/history
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_predictions_history
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Model Transparency
+Endpoint: /api/performance/summary
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_summary
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Performance
+Endpoint: /api/performance/summary
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_summary
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Performance
+Endpoint: /api/performance/by-league
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_by_league
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Performance
+Endpoint: /api/performance/by-market
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_by_market
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Performance
+Endpoint: /api/performance/by-tier
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_performance_by_tier
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Calibration
+Endpoint: /api/calibration/metrics
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Calibration
+Endpoint: /api/calibration/by-probability
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Calibration
+Endpoint: /api/predictions/history
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_predictions_history
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Prediction Tracker
+Endpoint: /api/predictions/history
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_predictions_history
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------
+
+Page: Prediction Tracker
+Endpoint: /api/predictions/pending
+Post Reset Only: NO
+Legacy Data Present: NO
+Fix Required: YES
+Function: api_predictions_pending
+Uses Since Reset: NO
+Uses Tracking Reset: NO
+Prediction Type Filter: NO
+------------------------------
+
+Page: Prediction Tracker
+Endpoint: /api/predictions/by-date
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Event Mode
+Endpoint: /api/event/status
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Event Mode
+Endpoint: /api/event/predictions
+Post Reset Only: UNKNOWN
+Legacy Data Present: UNKNOWN
+Fix Required: UNKNOWN
+Uses Since Reset: 
+Uses Tracking Reset: 
+Prediction Type Filter: 
+------------------------------
+
+Page: Event Mode
+Endpoint: /api/predictions/history
+Post Reset Only: YES
+Legacy Data Present: NO
+Fix Required: NO
+Function: api_predictions_history
+Uses Since Reset: YES
+Uses Tracking Reset: YES
+Prediction Type Filter: NO
+------------------------------

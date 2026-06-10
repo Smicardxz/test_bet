@@ -269,7 +269,7 @@
             document.getElementById('content').style.display = 'none';
             document.getElementById('error').style.display = 'none';
             
-            fetch('/api/data')
+            fetch('/api/data', {headers: {'ngrok-skip-browser-warning': 'true'}})
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -595,7 +595,7 @@
         }
         
         function refreshData() {
-            fetch('/api/refresh').then(() => loadData());
+            fetch('/api/refresh', {headers: {'ngrok-skip-browser-warning': 'true'}}).then(() => loadData());
         }
         
         // Load on start

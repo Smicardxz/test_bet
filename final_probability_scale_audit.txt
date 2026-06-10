@@ -1,0 +1,38 @@
+FINAL PROBABILITY SCALE AUDIT REPORT
+==================================================
+
+4167% vs 41.7% Issue Investigation
+----------------------------------------
+Expected: 1/2.40 = 0.4167 = 41.7%
+Actual: 4167% (double multiplication)
+
+Double multiplication found in backend: False
+
+Backend Analysis:
+--------------------
+Repository:
+  Probability fields: ['probability_source', 'implied_probability', 'market_probability', 'Probability', 'model_probability']
+  Scaling operations: 0
+  Normalization logic: 0
+
+Scanner:
+  Probability fields: ['probability_source', 'statistical_probability', 'PROBABILITY_OUT_OF_BOUNDS', 'implied_probability', 'market_probability', 'historical_probability', '_calculate_probability', 'probability', 'model_probability']
+  Scaling operations: 0
+  Normalization logic: 1
+
+Frontend Analysis:
+--------------------
+templates/dashboard.html:
+  Probability displays: 4
+  Percentage conversions: 2
+
+templates/dashboard_compact.html:
+  Probability displays: 3
+  Percentage conversions: 2
+
+templates/dashboard_intelligence.html:
+  Probability displays: 2
+  Percentage conversions: 2
+
+API Endpoints with Probabilities:
+-----------------------------------

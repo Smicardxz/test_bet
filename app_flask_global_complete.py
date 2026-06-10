@@ -484,11 +484,78 @@ def get_matches():
     """Matches COMPLET avec tous les filtres ORIGINAUX"""
     try:
         data = load_all_data()
-        # ... (implémentation complète similaire à l'original)
+        global_data = data["global_data"] or {}
+        daily_data = data["daily_data"] or {}
+        legacy_data = data["legacy_data"] or {}
+        
+        # Extraire les matches de toutes les sources
+        layer2_matches = global_data.get("layer2_statistical_profiling", [])
+        daily_matches = daily_data.get("raw_anomalies", [])
+        legacy_matches = legacy_data.get("scan_result", {}).get("analyzed_matches", [])
+        
+        # Normaliser tous les matches
+        global_normalized = [_normalize_global_match(m) for m in layer2_matches]
+        daily_normalized = [_normalize_legacy_match(m) for m in daily_matches]
+        legacy_normalized = [_normalize_legacy_match(m) for m in legacy_matches]
+        
+        # Combiner par ordre de priorité
+        all_matches = global_normalized + daily_normalized + legacy_normalized
+        
+        # Paramètres de filtrage
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        status_filter = request.args.get('status', 'all')
+        country_filter = request.args.get('country', '')
+        league_filter = request.args.get('league', '')
+        confidence_min = request.args.get('confidence')
+        profile_type = request.args.get('profile_type', '')
+        analyzed_only = request.args.get('analyzed', 'true')
+        
+        # Filtrage
+        filtered = all_matches
+        
+        if status_filter != 'all':
+            filtered = [m for m in filtered if m["status"].lower() == status_filter.lower()]
+        
+        if country_filter:
+            filtered = [m for m in filtered if country_filter.lower() in m["country"].lower()]
+        
+        if league_filter:
+            filtered = [m for m in filtered if league_filter.lower() in m["league"].lower()]
+        
+        if confidence_min is not None:
+            conf_min = float(confidence_min)
+            filtered = [m for m in filtered if m["confidence_score"] >= conf_min]
+        
+        if profile_type:
+            pt_lower = profile_type.lower()
+            filtered = [m for m in filtered if pt_lower in str(m["profile_tags"]).lower()]
+        
+        if analyzed_only == 'true':
+            filtered = [m for m in filtered if m["analyzed"]]
+        elif analyzed_only == 'false':
+            filtered = [m for m in filtered if not m["analyzed"]]
+        
+        # Trier par interest_score puis confidence_score
+        filtered.sort(key=lambda m: (m.get("interest_score", 0), m.get("confidence_score", 0)), reverse=True)
+        
+        total = len(filtered)
+        paginated = filtered[offset:offset + limit]
+        
         return jsonify({
             "success": True,
-            "matches": [],
-            "total_found": 0
+            "matches": paginated,
+            "total_found": total,
+            "offset": offset,
+            "limit": limit,
+            "filters_applied": {
+                "status": status_filter,
+                "country": country_filter,
+                "league": league_filter,
+                "confidence": confidence_min,
+                "profile_type": profile_type,
+                "analyzed": analyzed_only
+            }
         })
         
     except Exception as e:

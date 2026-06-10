@@ -1,0 +1,52 @@
+{
+  "fixture_id": "123",
+  "home_team": "Team A",
+  "away_team": "Team B",
+  "league": "Ligue 1",
+  "country": "France",
+  "kickoff_time": "2025-01-01T20:00:00",
+  "status": "UPCOMING",
+  "tier_level": "A_TIER",
+  "ranking_score": 0.62,
+  "interest_score": 72.0,
+  "confidence_score": 68.5,
+  "volatility_score": 22.3,
+  "data_quality": "GOOD",
+  "chaos_score": 18.5,
+  "stability_index": 75.2,
+  "explosive_match_rate": 6.25,
+  "fake_under_risk": 15.0,
+  "refuse_pick": false,
+  "refuse_pick_reason": "",
+  "volatility_tags": [],
+  "false_signal_score": 21.0,
+  "false_signal_reasons": [],
+  "false_signal_tags": [],
+  "tier_downgrade": false,
+  "small_sample_risk": 25.0,
+  "opposition_quality_mismatch": 10.0,
+  "weighted_goal_projection": 1.65,
+  "weighted_ht_projection": 0.42,
+  "weighted_tempo_projection": "LOW_TEMPO",
+  "weighted_form_score": 33.0,
+  "home_strength_index": 58.2,
+  "away_weakness_index": 42.0,
+  "matchup_asymmetry_score": 24.3,
+  "expected_home_goals": 1.4,
+  "expected_away_goals": 0.9,
+  "home_away_tags": [
+    "HOME_DOMINANT"
+  ],
+  "league_volatility_score": 28.1,
+  "league_reliability_score": 80.3,
+  "league_stability_score": 63.6,
+  "league_tags": [
+    "STABLE_UNDER_LEAGUE"
+  ],
+  "league_btts_rate": 44.1,
+  "league_under_2_5_rate": 52.3,
+  "league_avg_goals": 2.18,
+  "confidence_adjustments": [
+    "STABLE_UNDER_LEAGUE +8% under confidence"
+  ]
+}

@@ -100,11 +100,11 @@ class ApiFootballProvider(BaseDataProvider):
             config = ProviderConfig(
                 name="api_football",
                 base_url=api_url,
-                rate_limit_per_minute=30,  # Free tier: 100 requests/day
-                timeout_seconds=15,
-                retry_attempts=3,
+                rate_limit_per_minute=45,  # Raised: API-Football Basic = 300/min
+                timeout_seconds=10,
+                retry_attempts=2,
                 cache_enabled=True,
-                cache_ttl_seconds=300
+                cache_ttl_seconds=3600  # 1-hour cache — team history stable within a day
             )
         
         super().__init__(config)
@@ -130,12 +130,20 @@ class ApiFootballProvider(BaseDataProvider):
     # =========================================================================
     
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Dict:
-        """Make HTTP request to API-Football"""
+        """Make HTTP request to API-Football (with disk cache)"""
+        # Build cache key from endpoint + params
+        cache_key = self._get_cache_key(endpoint, **(params or {}))
+        cached = self._get_from_cache(cache_key)
+        if cached:
+            self.logger.debug(f"[CACHE HIT] {endpoint} (age {cached.get('cache_age_seconds')}s)")
+            return cached.get("response_data", {})
+
+        # Miss → rate-limit then fetch
         self._rate_limit()
-        
+
         url = f"{self.base_url}/{endpoint}"
         self.logger.debug(f"GET {url} with params {params}")
-        
+
         def _request():
             response = self.session.get(
                 url,
@@ -144,8 +152,10 @@ class ApiFootballProvider(BaseDataProvider):
             )
             response.raise_for_status()
             return response.json()
-        
-        return self._retry_request(_request)
+
+        data = self._retry_request(_request)
+        self._save_to_cache(cache_key, {"response_data": data})
+        return data
     
     def test_connection(self) -> Dict[str, Any]:
         """
@@ -553,31 +563,15 @@ class ApiFootballProvider(BaseDataProvider):
                 logo=league.get("logo", "")
             )
             
-            # Parse score (only if match has started)
-            score_fulltime = None
-            score_halftime = None
-            
-            if goals.get("home") is not None and goals.get("away") is not None:
-                score_fulltime = MatchScore(
-                    home=goals.get("home", 0),
-                    away=goals.get("away", 0)
-                )
-            
-            ht_home = score.get("halftime", {}).get("home")
-            ht_away = score.get("halftime", {}).get("away")
-            if ht_home is not None and ht_away is not None:
-                score_halftime = MatchScore(
-                    home=ht_home,
-                    away=ht_away
-                )
-            
-            # Parse status
+            # Parse status first (needed for score logic)
             raw_status = fixture.get("status", {})
             status_short = raw_status.get("short", "NS") if isinstance(raw_status, dict) else str(raw_status)
+            status_long = raw_status.get("long", "") if isinstance(raw_status, dict) else ""
+            elapsed = raw_status.get("elapsed") if isinstance(raw_status, dict) else None
             
             # Log raw status for debugging
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[PARSE] Raw status: {raw_status}, short: {status_short}")
+                logger.debug(f"[PARSE] Raw status: {raw_status}, short: {status_short}, elapsed: {elapsed}")
             
             status_map = {
                 "TBD": MatchStatus.SCHEDULED,
@@ -596,6 +590,33 @@ class ApiFootballProvider(BaseDataProvider):
             }
             status = status_map.get(status_short, MatchStatus.SCHEDULED)
             
+            # Parse score (always include goals for live/finished matches)
+            score_fulltime = None
+            score_halftime = None
+            
+            # For live and finished matches, use goals (current score)
+            # For upcoming matches, goals might be null
+            home_goals = goals.get("home")
+            away_goals = goals.get("away")
+            
+            if (home_goals is not None and away_goals is not None) or status != MatchStatus.SCHEDULED:
+                # Ensure we have valid integers (default to 0 if None for live matches)
+                home_score_val = int(home_goals) if home_goals is not None else 0
+                away_score_val = int(away_goals) if away_goals is not None else 0
+                
+                score_fulltime = MatchScore(
+                    home=home_score_val,
+                    away=away_score_val
+                )
+            
+            ht_home = score.get("halftime", {}).get("home")
+            ht_away = score.get("halftime", {}).get("away")
+            if ht_home is not None and ht_away is not None:
+                score_halftime = MatchScore(
+                    home=int(ht_home),
+                    away=int(ht_away)
+                )
+            
             # Parse date
             match_date_str = fixture.get("date", "")
             match_date = datetime.fromisoformat(match_date_str.replace('Z', '+00:00')) if match_date_str else datetime.now()
@@ -609,6 +630,9 @@ class ApiFootballProvider(BaseDataProvider):
                 status=status,
                 score_fulltime=score_fulltime,
                 score_halftime=score_halftime,
+                elapsed=elapsed,
+                status_short=status_short,
+                status_long=status_long,
                 venue=fixture.get("venue", {}).get("name", ""),
                 referee=fixture.get("referee", ""),
                 provider=self.config.name
@@ -923,7 +947,7 @@ class ApiFootballProvider(BaseDataProvider):
             bookmaker = bookmakers[0]
             bets = bookmaker.get("bets", [])
             
-            # Extract relevant markets
+            # Extract relevant markets (avec gestion d'erreurs)
             markets = {}
             for bet in bets:
                 bet_name = bet.get("name", "")
@@ -931,22 +955,34 @@ class ApiFootballProvider(BaseDataProvider):
                 
                 if bet_name == "Match Winner":
                     for v in values:
-                        if v["value"] == "Home":
-                            markets["home_win"] = float(v["odd"])
-                        elif v["value"] == "Draw":
-                            markets["draw"] = float(v["odd"])
-                        elif v["value"] == "Away":
-                            markets["away_win"] = float(v["odd"])
+                        odd_value = v.get("odd", "")
+                        if odd_value and odd_value.strip():  # Vérifier que l'odd n'est pas vide
+                            try:
+                                if v["value"] == "Home":
+                                    markets["home_win"] = float(odd_value)
+                                elif v["value"] == "Draw":
+                                    markets["draw"] = float(odd_value)
+                                elif v["value"] == "Away":
+                                    markets["away_win"] = float(odd_value)
+                            except (ValueError, TypeError):
+                                logger.warning(f"Invalid odd value: {odd_value} for {v['value']}")
+                                continue
                 
                 elif "Over/Under" in bet_name or "Goals" in bet_name:
                     for v in values:
-                        value_str = v["value"]
-                        if "Over" in value_str:
-                            line = value_str.replace("Over ", "").strip()
-                            markets[f"over_{line}"] = float(v["odd"])
-                        elif "Under" in value_str:
-                            line = value_str.replace("Under ", "").strip()
-                            markets[f"under_{line}"] = float(v["odd"])
+                        value_str = v.get("value", "")
+                        odd_value = v.get("odd", "")
+                        if value_str and odd_value and odd_value.strip():  # Vérifier que les valeurs ne sont pas vides
+                            try:
+                                if "Over" in value_str:
+                                    line = value_str.replace("Over ", "").strip()
+                                    markets[f"over_{line}"] = float(odd_value)
+                                elif "Under" in value_str:
+                                    line = value_str.replace("Under ", "").strip()
+                                    markets[f"under_{line}"] = float(odd_value)
+                            except (ValueError, TypeError):
+                                logger.warning(f"Invalid odd value: {odd_value} for {value_str}")
+                                continue
             
             if not markets:
                 return None

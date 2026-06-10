@@ -1,0 +1,16 @@
+PROBABILITY SCALE AUDIT RESULTS
+==================================================
+
+ISSUE INVESTIGATION: 4167% vs 41.7%
+----------------------------------------
+Expected: 1/2.40 = 0.4167 = 41.7%
+Actual: 4167% (indicates double multiplication)
+
+
+SCHEMA FINDINGS:
+--------------------
+model_probability: ['FLOAT']
+confidence_score: ['FLOAT']
+
+REPOSITORY SCALING OPERATIONS:
+-----------------------------------

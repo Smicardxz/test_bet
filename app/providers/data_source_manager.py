@@ -128,13 +128,22 @@ class DataSourceManager:
         
         return response
     
-    def get_match_odds(self, match_id: str):
-        """Fetch odds with provenance tracking"""
-        response = self.odds_provider.get_match_odds(match_id)
-        
+    def get_match_odds(
+        self,
+        match_id: str,
+        home_team: Optional[str] = None,
+        away_team: Optional[str] = None
+    ):
+        """Fetch odds with provenance tracking - Phase 6: pass team names for fuzzy matching"""
+        response = self.odds_provider.get_match_odds(
+            match_id=match_id,
+            home_team=home_team,
+            away_team=away_team
+        )
+
         is_real = self.odds_provider.config.name != "mock_odds"
         self._log_provenance("get_match_odds", is_real)
-        
+
         return response
     
     def get_source_status(self) -> Dict[str, Any]:

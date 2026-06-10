@@ -1,0 +1,1 @@
+{"response_data": {"get": "fixtures", "parameters": {"team": "19485", "last": "10", "season": "2026"}, "errors": [], "results": 0, "paging": {"current": 1, "total": 1}, "response": []}, "timestamp": "2026-06-01T13:26:22.825073"}

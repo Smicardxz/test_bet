@@ -42,8 +42,8 @@ class DataSourceConfig:
     cache_enabled: bool = True
     cache_ttl_seconds: int = 300
     
-    # Odds provider
-    odds_provider: str = "mock"  # or "external" with API key
+    # Odds provider — always the_odds_api; "external" = key present & active
+    odds_provider: str = "the_odds_api"
     odds_api_key: Optional[str] = None
     
     # Display settings
@@ -51,29 +51,47 @@ class DataSourceConfig:
     warn_on_mock: bool = True
     
     def __post_init__(self):
-        """Initialize from environment variables"""
-        
-        # Read DATA_PROVIDER from environment
-        env_provider = os.getenv("DATA_PROVIDER", "mock").lower()
-        
+        """Initialize from environment variables - DEFAULT: api_football, NO mock fallback"""
+
+        # Read DATA_PROVIDER from environment - default api_football (no mock)
+        env_provider = os.getenv("DATA_PROVIDER", "api_football").lower()
+
         if env_provider == "api_football":
             self.source_type = DataSourceType.API_FOOTBALL
         elif env_provider == "sofascore":
             self.source_type = DataSourceType.SOFASCORE
         elif env_provider == "auto":
-            self.source_type = DataSourceType.AUTO
+            self.source_type = DataSourceType.API_FOOTBALL  # AUTO = api_football, no mock fallback
+        elif env_provider == "mock":
+            self.source_type = DataSourceType.MOCK  # Explicit mock only
         else:
-            self.source_type = DataSourceType.MOCK
+            self.source_type = DataSourceType.API_FOOTBALL  # Any unknown = api_football
         
         # Read other env vars
         self.cache_enabled = os.getenv("CACHE_ENABLED", "true").lower() == "true"
         self.show_data_source_labels = os.getenv("SHOW_SOURCE_LABELS", "true").lower() == "true"
         self.warn_on_mock = os.getenv("WARN_ON_MOCK", "true").lower() == "true"
         
-        # Odds API key
-        self.odds_api_key = os.getenv("ODDS_API_KEY")
-        if self.odds_api_key:
-            self.odds_provider = "external"
+        # Odds API key — never display the key value, only presence
+        raw_key = os.getenv("ODDS_API_KEY", "").strip()
+        self.odds_api_key = raw_key if raw_key else None
+        self.odds_api_url = os.getenv("ODDS_API_URL", "https://api.the-odds-api.com/v4").strip()
+
+        # API-Football key (same as fixtures key — used for /odds endpoint)
+        raw_apifb_key = os.getenv("API_FOOTBALL_KEY", "").strip()
+        self.apifootball_odds_key = raw_apifb_key if raw_apifb_key else None
+        self.apifootball_url = os.getenv("API_FOOTBALL_URL", "https://v3.football.api-sports.io").strip()
+
+        _has_apifb  = bool(self.apifootball_odds_key)
+        _has_oddsapi = bool(self.odds_api_key)
+        if _has_apifb and _has_oddsapi:
+            self.odds_provider = "manager_apifb+oddsapi"
+        elif _has_apifb:
+            self.odds_provider = "manager_apifb_primary"
+        elif _has_oddsapi:
+            self.odds_provider = "manager_oddsapi_only"
+        else:
+            self.odds_provider = "no_odds_key"
     
     @property
     def is_real_data(self) -> bool:
@@ -167,18 +185,52 @@ class DataSourceConfig:
         
         return MockDataProvider()
     
+    @property
+    def odds_key_present(self) -> bool:
+        """True if at least one odds key is set — never exposes the key"""
+        return bool(self.odds_api_key or self.apifootball_odds_key)
+
+    @property
+    def odds_status(self) -> str:
+        """Current odds configuration status"""
+        parts = []
+        if self.apifootball_odds_key:
+            parts.append("APIFB")
+        if self.odds_api_key:
+            parts.append("ODDSAPI")
+        return "+".join(parts) if parts else "MISSING_KEY"
+
     def get_odds_provider(self):
-        """Get configured odds provider"""
-        from app.providers.odds import MockOddsProvider
-        from app.providers.odds.external_odds_provider import ExternalOddsProvider
-        
-        if self.odds_provider == "external" and self.odds_api_key:
-            return ExternalOddsProvider(api_key=self.odds_api_key)
-        
-        return MockOddsProvider()
+        """
+        Phase 1: Returns OddsProviderManager with priority:
+          1. API-Football /odds  (primary)
+          2. The Odds API        (fallback)
+        Never mocks. Always non-blocking.
+        """
+        import logging
+        _log = logging.getLogger(__name__)
+        from app.providers.odds.odds_provider_manager import OddsProviderManager
+
+        if not self.apifootball_odds_key and not self.odds_api_key:
+            _log.warning(
+                "Neither API_FOOTBALL_KEY nor ODDS_API_KEY set — "
+                "EV detection disabled (odds_status=MISSING_KEY)."
+            )
+
+        mgr = OddsProviderManager(
+            apifootball_key=self.apifootball_odds_key,
+            apifootball_url=self.apifootball_url,
+            oddsapi_key=self.odds_api_key,
+            oddsapi_url=self.odds_api_url,
+        )
+        _log.info(
+            f"OddsProviderManager ready — primary={'API_FOOTBALL' if self.apifootball_odds_key else 'ODDS_API'}, "
+            f"status={self.odds_status}"
+        )
+        return mgr
     
     def to_dict(self) -> dict:
-        """Serialize configuration"""
+        """Serialize configuration — never expose raw keys"""
         return {
             "source_type": self.source_type.value,
             "source_label": self.source_label,
@@ -187,6 +239,9 @@ class DataSourceConfig:
             "cache_enabled": self.cache_enabled,
             "cache_ttl_seconds": self.cache_ttl_seconds,
             "odds_provider": self.odds_provider,
+            "odds_key_present": self.odds_key_present,
+            "odds_status": self.odds_status,
+            "odds_api_url": self.odds_api_url,
             "show_data_source_labels": self.show_data_source_labels,
-            "warn_on_mock": self.warn_on_mock
+            "warn_on_mock": self.warn_on_mock,
         }
