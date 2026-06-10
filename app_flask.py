@@ -2598,6 +2598,16 @@ def api_diagnostics():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+def _build_bankroll_sim(rows, shadow_predictions):
+    """Thin wrapper — imports lazily to avoid circular deps."""
+    try:
+        from app.services.simulation.bankroll_simulator import build_bankroll_simulation
+        return build_bankroll_simulation(rows, shadow_predictions)
+    except Exception as _brs_exc:
+        logger.error(f"[BANKROLL_SIM] {_brs_exc}")
+        return {"error": str(_brs_exc)}
+
+
 # ─── Shadow Lab API ─────────────────────────────────────────────────────────────
 
 @app.route("/api/shadow-lab", methods=["GET", "OPTIONS"])
@@ -3629,7 +3639,10 @@ def api_shadow_lab():
             "recent_settled": recent_settled,
             
             # Shadow portfolio - simulated picks with ROI participation
-            "shadow_portfolio": shadow_predictions
+            "shadow_portfolio": shadow_predictions,
+            
+            # Bankroll simulation (Phase 1 + 2)
+            "bankroll_simulation": _build_bankroll_sim(rows, shadow_predictions),
         })
         
     except Exception as e:
