@@ -19,6 +19,7 @@ import os
 import sys
 import threading
 import time
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -34,6 +35,90 @@ logging.basicConfig(
     level=logging.WARNING,          # masquer les logs verbeux en mode start
     format="%(levelname)s [%(name)s] %(message)s",
 )
+
+
+# =============================================================================
+# Thread : Telegram Shadow Copilot
+# =============================================================================
+
+def _telegram_configured() -> bool:
+    """True only if both Telegram credentials are present and alerts are enabled."""
+    return bool(
+        os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+        and os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+        and os.environ.get("SHADOW_ALERTS_ENABLED", "true").lower() == "true"
+    )
+
+
+def _run_telegram_copilot() -> None:
+    """Single copilot run: new bets + settlements + divergences + morning report."""
+    if not _telegram_configured():
+        return
+
+    try:
+        from scripts.telegram_shadow_copilot import (
+            _fetch_data,
+            _generate_shadow_predictions,
+            _generate_experimental_picks,
+            _build_portfolio_all,
+            _compute_bankroll_series,
+            _do_daily_report,
+            _do_new_bets,
+            _do_settlements,
+            _do_divergences,
+        )
+    except Exception as exc:
+        print(f"  {YELLOW}[TELEGRAM] import error: {exc}{RESET}")
+        return
+
+    try:
+        rows, fixture_lookup = _fetch_data()
+        shadow_preds   = _generate_shadow_predictions(rows, fixture_lookup)
+        exp_picks      = _generate_experimental_picks(rows, fixture_lookup)
+        portfolio      = _build_portfolio_all(shadow_preds, exp_picks)
+        current_bk, _ = _compute_bankroll_series(portfolio)
+
+        counters = {
+            "daily_reports_sent":     0,
+            "new_bet_alerts_sent":    0,
+            "settlement_alerts_sent": 0,
+            "divergence_alerts_sent": 0,
+            "skipped_duplicates":     0,
+            "skipped_missing_config": 0,
+        }
+
+        # Daily report only during morning window (06:00–10:00 UTC)
+        if 6 <= datetime.now(timezone.utc).hour < 10:
+            _do_daily_report(portfolio, fixture_lookup, False, counters)
+
+        _do_new_bets(portfolio, current_bk, False, counters)
+        _do_settlements(portfolio, fixture_lookup, False, counters)
+        _do_divergences(rows, portfolio, fixture_lookup, False, counters)
+
+        sent = (
+            counters["daily_reports_sent"]
+            + counters["new_bet_alerts_sent"]
+            + counters["settlement_alerts_sent"]
+            + counters["divergence_alerts_sent"]
+        )
+        if sent:
+            print(
+                f"  {CYAN}[TELEGRAM]{RESET} "
+                f"daily={counters['daily_reports_sent']} "
+                f"new_bets={counters['new_bet_alerts_sent']} "
+                f"settlements={counters['settlement_alerts_sent']} "
+                f"divergences={counters['divergence_alerts_sent']}"
+            )
+    except Exception as exc:
+        print(f"  {YELLOW}[TELEGRAM] run error: {exc}{RESET}")
+
+
+def _telegram_thread(interval_minutes: float = 30.0) -> None:
+    """Background thread: run Telegram copilot every N minutes."""
+    time.sleep(20)          # let Flask + DB settle first
+    while True:
+        _run_telegram_copilot()
+        time.sleep(interval_minutes * 60)
 
 
 # =============================================================================
@@ -76,6 +161,8 @@ def main():
     parser.add_argument("--dry-run",      action="store_true",       dest="dry_run")
     parser.add_argument("--since-reset",  action="store_true",       dest="since_reset",
                         help="Rapport filtré sur TRACKING_RESET_AT (POST_RESET uniquement)")
+    parser.add_argument("--no-telegram",  action="store_true",       dest="no_telegram",
+                        help="Désactiver le thread Telegram copilot")
     args = parser.parse_args()
 
     # Auto-enable since_reset when TRACKING_RESET_AT is set in .env
@@ -113,6 +200,18 @@ def main():
             name     = "TrackingCycle",
         )
         t.start()
+
+    # ── Thread Telegram copilot ───────────────────────────────────────────────
+    if not args.no_telegram:
+        tg_status = f"{GREEN}configured{RESET}" if _telegram_configured() else f"{YELLOW}keys not set — will skip silently{RESET}"
+        print(f"  {CYAN}Telegram{RESET}    -> {tg_status}")
+        tg = threading.Thread(
+            target = _telegram_thread,
+            args   = (30.0,),
+            daemon = True,
+            name   = "TelegramCopilot",
+        )
+        tg.start()
 
     # ── Flask (thread principal) ───────────────────────────────────────────────
     from app_flask import app as flask_app
